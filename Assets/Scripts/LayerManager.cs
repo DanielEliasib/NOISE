@@ -7,53 +7,72 @@ using Unity.Mathematics;
 
 public class LayerManager : MonoBehaviour
 {
-    private RenderTexture _Layers;
-    private RenderTexture[] _Aux;
-    [SerializeField] private RawImage _TargetImage;
+    [SerializeField, Range(1, 200)] private float _Frecuency1, _Frecuency2;
+    
+    [SerializeField] private float2 _TimeScale;
+    [SerializeField, Range(1, 10)] private int _Levels = 5;
+    
+    [SerializeField] private Color[] _Colors;
+
+    [SerializeField] private GameObject _UIHolder;
+    [SerializeField] private RawImage _TargetImagePrefab;
+
+    // Compute Variables
     [SerializeField] private ComputeShader _Compute;
+    ComputeBuffer _ColorBuffer;
+
+    //
+    [SerializeField, Range(0, 10)] private float _K = 0.5f;
+    [SerializeField, Range(0, 10)] private float _W = 0.5f;
 
     private int _KernelIndex;
     private string _KernelName = "NoiseGenerator";
 
-    private int width = 512, height = 512;
-
-    [SerializeField, Range(1, 200)] private float _Frecuency1, _Frecuency2;
-    [SerializeField] private float2 _Offset1, _Offset2;
-    [SerializeField] private float2 _TimeScale;
-    [SerializeField, Range(1, 10)] private int _Levels = 5;
-    [SerializeField, Range(1, 10)] private int _CurrentLayer = 1;
-    [SerializeField] private Color[] _Colors;
-    [SerializeField] private GameObject _UIHolder;
-
-    ComputeBuffer _ColorBuffer;
+    private float2 _Offset1, _Offset2;
+    private int _LevelsPriv;
+    // Colors Saved
     private float3[] _ColorBackUp;
+
+    // Texture Containers
+    private RenderTexture _Layers;
+    private RenderTexture[] _Aux;
+
+    private int width = 960, height = 960;
+
     // Start is called before the first frame update
     void Start()
     {
+        _LevelsPriv = _Levels;
+
+        // All the layers un GPU memmory
         _Layers = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
-        _Aux = new RenderTexture[_Levels];
+
+        _Layers.dimension = UnityEngine.Rendering.TextureDimension.Tex2DArray;
+        _Layers.enableRandomWrite = true;
+        _Layers.volumeDepth = _LevelsPriv;
+        _Layers.Create();
+
+        // Auxiliar textures to blit the results out of the array
+        _Aux = new RenderTexture[_LevelsPriv];
+
+        //Initting every texture
         for(int i = 0; i < _Aux.Length; i++)
         {
             _Aux[i] = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
             _Aux[i].enableRandomWrite = true;
             _Aux[i].Create();
         }
-            
-        //_Aux = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
-
-        _Layers.dimension = UnityEngine.Rendering.TextureDimension.Tex2DArray;
-        _Layers.enableRandomWrite = true;
-        _Layers.volumeDepth = _Levels;
-        _Layers.Create();
 
         InitCompute();
 
-
-        for (int i = 0; i < _Levels; i++)
+        //Create the RawImages to store every layer
+        for (int i = 0; i < _LevelsPriv; i++)
         {
-            var obj = GameObject.Instantiate(_TargetImage, _UIHolder.transform);
+            var obj = Instantiate(_TargetImagePrefab, _UIHolder.transform);
             obj.transform.localPosition = new float3(0.0f,i*15f,0.0f);
-            obj.transform.rotation = Quaternion.Euler(70, 0, -45);
+            obj.transform.localRotation = Quaternion.Euler(70, 0, -45);
+
+            obj.name = "Tex: " + i;
 
             obj.texture = _Aux[i];
         }
@@ -64,34 +83,27 @@ public class LayerManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        FixCurrentLayer();
-
-        //_Frecuency = Mathf.Lerp(18, 22, Mathf.Sin(Time.realtimeSinceStartup));
-
-        //_Offset1 += new float2((Time.time % 100) *0.01f, 0.0f);
-        //_Offset2 += new float2(0.0f, (Time.time % 100) * 0.01f);
-
         _Offset1.y = Time.time * _TimeScale.x;
         _Offset2.x = Time.time * _TimeScale.y;
 
 
         SetNoiseParameters(_Frecuency1, _Frecuency2, _Offset1, _Offset2);
+
+        _Compute.SetFloat("_Time", Time.time%120);
+        _Compute.SetFloat("_K", _K);
+        _Compute.SetFloat("_W", _W);
+
         _Compute.Dispatch(_KernelIndex, width / 8, height / 8, 1);
 
-        for(int i = 0; i < _Levels; i++)
-            Graphics.Blit(_Layers, _Aux[_Levels - i - 1], i, 0);
-    }
-
-    void FixCurrentLayer()
-    {
-        _CurrentLayer = Mathf.Clamp(_CurrentLayer, 0, _Levels);
+        for(int i = 0; i < _LevelsPriv; i++)
+            Graphics.Blit(_Layers, _Aux[i], i, 0);
     }
 
     void InitCompute()
     {
         _KernelIndex = _Compute.FindKernel(_KernelName);
         _Compute.SetTexture(_KernelIndex, "_TexArray", _Layers);
-        _Compute.SetInt("levels", _Levels);
+        _Compute.SetInt("levels", _LevelsPriv);
 
         _ColorBuffer = new ComputeBuffer(_Colors.Length,3*sizeof(float));
 
