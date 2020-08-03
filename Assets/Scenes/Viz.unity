@@ -440,8 +440,8 @@ MonoBehaviour:
   _UIHolder: {fileID: 181933991}
   _TargetImagePrefab: {fileID: 8736642149949679981, guid: 7ff82b9055b9e38488843edf638e238d, type: 3}
   _Compute: {fileID: 7200000, guid: d90e4d9adeeae6d4dba4f189cf5ccf2a, type: 3}
-  _K: 0.003
-  _W: 1
+  _K: 0.0174
+  _W: 0.2
 --- !u!1 &1068290313
 GameObject:
   m_ObjectHideFlags: 0
