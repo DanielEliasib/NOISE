@@ -1,84 +1,52 @@
 ﻿// Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel NoiseGenerator
 
-// Create a RenderTexture with enableRandomWrite flag and set it
-// with cs.SetTexture
-RWTexture2D<float4> Result;
+#include "kj/SimplexNoise3D.hlsl"
+#include "kj/BCCNoise8.hlsl"
 
-float _Frecuency, _SizeX, _SizeY;
+StructuredBuffer<float3> _Colors;
 
-float _OffsetX, _OffsetY;
+RWTexture2DArray<float4> _TexArray;
 
+int levels;
+int numberOfColors;
 
-float4 permute(float4 x)
-{
-    return fmod(34.0 * pow(x, 2) + x, 289.0);
-}
- 
-float2 fade(float2 t)
-{
-    return 6.0 * pow(t, 5.0) - 15.0 * pow(t, 4.0) + 10.0 * pow(t, 3.0);
-}
- 
-float4 taylorInvSqrt(float4 r)
-{
-    return 1.79284291400159 - 0.85373472095314 * r;
-}
+float _Frecuency1;
+float _Frecuency2;
 
-float PerlinNoise2D(float2 P)
-{
-    float4 Pi = floor(P.xyxy) + float4(0.0, 0.0, 1.0, 1.0);
-    float4 Pf = frac(P.xyxy) - float4(0.0, 0.0, 1.0, 1.0);
- 
-    float4 ix = Pi.xzxz;
-    float4 iy = Pi.yyww;
-    float4 fx = Pf.xzxz;
-    float4 fy = Pf.yyww;
- 
-    float4 i = permute(permute(ix) + iy);
- 
-    float4 gx = frac(i / 41.0) * 2.0 - 1.0;
-    float4 gy = abs(gx) - 0.5;
-    float4 tx = floor(gx + 0.5);
-    gx = gx - tx;
- 
-    float2 g00 = float2(gx.x, gy.x);
-    float2 g10 = float2(gx.y, gy.y);
-    float2 g01 = float2(gx.z, gy.z);
-    float2 g11 = float2(gx.w, gy.w);
- 
-    float4 norm = taylorInvSqrt(float4(dot(g00, g00), dot(g01, g01), dot(g10, g10), dot(g11, g11)));
-    g00 *= norm.x;
-    g01 *= norm.y;
-    g10 *= norm.z;
-    g11 *= norm.w;
- 
-    float n00 = dot(g00, float2(fx.x, fy.x));
-    float n10 = dot(g10, float2(fx.y, fy.y));
-    float n01 = dot(g01, float2(fx.z, fy.z));
-    float n11 = dot(g11, float2(fx.w, fy.w));
- 
-    float2 fade_xy = fade(Pf.xy);
-    float2 n_x = lerp(float2(n00, n01), float2(n10, n11), fade_xy.x);
-    float n_xy = lerp(n_x.x, n_x.y, fade_xy.y);
-    return 2.3 * n_xy;
-}
-
+float2 _Offset1, _Offset2;
 
 [numthreads(8, 8, 1)]
 void NoiseGenerator(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
-
-    float2 _Point = id.xy + float2(_OffsetX, _OffsetY);
+    float noise =
+        dot(
+            snoise_grad((id + float3(0, _Offset1)) / _Frecuency1).xyz,
+            snoise_grad((id + float3(_Offset2, 0)) / _Frecuency2).xyz
+            );
     
-    _Point.x = _Point.x / _SizeX;
-    _Point.y = _Point.y / _SizeY;
+    //Remap noise. I think dot(noise, noise) give us at most 1*1 + 1*1 + 1*1 = 3, and at least -1*1 -1*1 -1*1 = -3
+    //So I remap [-3,3] to [0, 1]
+    noise = noise / 6.0f + 0.5f;
     
-    float noise = PerlinNoise2D((float2) _Point * _Frecuency);
-	
-	Result[id.xy] = float4(noise, noise, noise, 1);
-
+    float step = 1.0f / levels;
+    
+    for (int i = 0; i < levels; i++)
+    {
+        if ((i + 1) * step >= noise)
+        {
+            int currentColor = (int) (i * step * numberOfColors);
+            
+            float3 color = lerp(_Colors[currentColor], _Colors[currentColor + 1], i * step * numberOfColors - currentColor);
+            
+            _TexArray[uint3(id.xy, i)] = float4(color, 1.0f);
+        }
+        else
+        {
+            _TexArray[uint3(id.xy, i)] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        }
+    }
 }
 
 

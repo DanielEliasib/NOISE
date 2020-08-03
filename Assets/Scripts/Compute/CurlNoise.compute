@@ -1,0 +1,9 @@
+﻿#pragma kernel CSParticle
+
+
+
+[numthreads(8, 8, 1)]
+void CSParticle(uint3 id : SV_DispatchThreadID)
+{
+	
+}
