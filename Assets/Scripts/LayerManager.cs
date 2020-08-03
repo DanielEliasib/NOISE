@@ -10,7 +10,7 @@ public class LayerManager : MonoBehaviour
     [SerializeField, Range(1, 200)] private float _Frecuency1, _Frecuency2;
     
     [SerializeField] private float2 _TimeScale;
-    [SerializeField, Range(1, 10)] private int _Levels = 5;
+    [SerializeField, Range(1, 20)] private int _Levels = 5;
     
     [SerializeField] private Color[] _Colors;
 
@@ -20,6 +20,8 @@ public class LayerManager : MonoBehaviour
     // Compute Variables
     [SerializeField] private ComputeShader _Compute;
     ComputeBuffer _ColorBuffer;
+    ComputeBuffer _WaveDataBuffer;
+    ComputeBuffer _AFDataBuffer;
 
     //
     [SerializeField, Range(0, 0.1f)] private float _K = 0.1f;
@@ -38,6 +40,11 @@ public class LayerManager : MonoBehaviour
     private RenderTexture[] _Aux;
 
     private int width = 960, height = 960;
+
+    private List<float4> _WaveData;
+    private List<float4> _WaveDataBack;
+    private List<float4> _AFData;
+    private List<float4> _AFDataBack;
 
     // Start is called before the first frame update
     void Start()
@@ -77,6 +84,10 @@ public class LayerManager : MonoBehaviour
             obj.texture = _Aux[i];
         }
 
+        _WaveData = new List<float4>();
+        _AFData = new List<float4>();
+        _WaveDataBack = new List<float4>();
+        _AFDataBack = new List<float4>();
         //_TargetImage.texture = _Layers;
     }
 
@@ -86,12 +97,13 @@ public class LayerManager : MonoBehaviour
         _Offset1.y = Time.time * _TimeScale.x;
         _Offset2.x = Time.time * _TimeScale.y;
 
+        ProcessInput();
+        ProcessWaves();
+        WaveBufferManager(_WaveData.Count);
 
         SetNoiseParameters(_Frecuency1, _Frecuency2, _Offset1, _Offset2);
 
-        _Compute.SetFloat("_Time", Time.time%120);
-        _Compute.SetFloat("_K", _K);
-        _Compute.SetFloat("_W", _W);
+        _Compute.SetFloat("_Time", Time.time);
 
         _Compute.Dispatch(_KernelIndex, width / 8, height / 8, 1);
 
@@ -116,7 +128,44 @@ public class LayerManager : MonoBehaviour
 
         _Compute.SetBuffer(_KernelIndex, "_Colors", _ColorBuffer);
         _Compute.SetInt("numberOfColors", _Colors.Length);
+
+        _WaveDataBuffer = new ComputeBuffer(1, sizeof(float) * 4);
+        _AFDataBuffer = new ComputeBuffer(1, sizeof(float) * 4);
     }
+
+    void WaveBufferManager(int numberOfWaves)
+    {
+        try
+        {
+            _WaveDataBuffer.Dispose();
+            _AFDataBuffer.Dispose();
+        }
+        catch { }
+
+        if(numberOfWaves > 0)
+        {
+            _WaveDataBuffer = new ComputeBuffer(numberOfWaves, sizeof(float) * 4);
+            _AFDataBuffer = new ComputeBuffer(numberOfWaves, sizeof(float) * 4);
+
+            _Compute.SetBuffer(_KernelIndex, "_WaveData", _WaveDataBuffer);
+            _Compute.SetBuffer(_KernelIndex, "_AFData", _AFDataBuffer);
+
+            _WaveDataBuffer.SetData(_WaveData);
+            _AFDataBuffer.SetData(_AFData);
+        }
+        else
+        {
+            _WaveDataBuffer = new ComputeBuffer(1, sizeof(float) * 4);
+            _AFDataBuffer = new ComputeBuffer(1, sizeof(float) * 4);
+
+            _Compute.SetBuffer(_KernelIndex, "_WaveData", _WaveDataBuffer);
+            _Compute.SetBuffer(_KernelIndex, "_AFData", _AFDataBuffer);
+
+        }
+
+        _Compute.SetInt("numberOfWaves", numberOfWaves);
+    }
+
 
     void SetNoiseParameters(float frecuency1, float frecuency2, float2 offset1, float2 offset2) 
     {
@@ -125,5 +174,45 @@ public class LayerManager : MonoBehaviour
 
         _Compute.SetFloats("_Offset1", new float[] { offset1.x, offset1.y });
         _Compute.SetFloats("_Offset2", new float[] { offset2.x, offset2.y });
+    }
+
+    void ProcessInput()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            
+            float w = _W, k = _K;
+            _WaveData.Add(new float4(w/k, 2 * Mathf.PI/k, k, w));
+            _AFData.Add(new float4(0.5f, 2.5f, w/(2 * Mathf.PI),Time.time));
+
+            Debug.Log("Wave added: " + _WaveData[_WaveData.Count - 1] + "\n" + _AFData[_AFData.Count - 1]);
+        }
+    }
+
+    void ProcessWaves()
+    {
+        _AFDataBack.Clear();
+        _WaveDataBack.Clear();
+
+        for(int i = 0; i < _WaveData.Count; i++)
+        {
+            //Check if the wave already leaved the screen, if so it removes it from the data
+            if(!(_WaveData[i].x*(Time.time - _AFData[i].w) + _WaveData[i].y > Mathf.Sqrt(width*width + height * height)))
+            {
+                _WaveDataBack.Add(_WaveData[i]);
+                _AFDataBack.Add(_AFData[i]);
+            }
+
+        }
+
+        _WaveData = new List<float4>(_WaveDataBack);
+        _AFData = new List<float4>(_AFDataBack);
+    }
+
+    private void OnDestroy()
+    {
+        _ColorBuffer.Dispose();
+        _AFDataBuffer.Dispose();
+        _WaveDataBuffer.Dispose();
     }
 }

@@ -6,33 +6,60 @@
 
 StructuredBuffer<float3> _Colors;
 
+// x:vel, y:lambda, z:k, w:w
+StructuredBuffer<float4> _WaveData;
+// x:A, y:a, z:f, w:time shift
+StructuredBuffer<float4> _AFData;
+
 RWTexture2DArray<float4> _TexArray;
 
 int levels;
 int numberOfColors;
+int numberOfWaves;
 
 float _Frecuency1;
 float _Frecuency2;
 
 float2 _Offset1, _Offset2;
 
-float _Time, _K, _W;
+float _Time;
 
-float A(float t)
+const float PI = 3.1415926535897932384626f;
+
+float A(float t, float amp, float par)
 {
-    //return 1.0f / exp(t);
-    return 0.5f;
+    return amp / exp(par*t);
 }
 
-float WaveFunction(float r, float k, float w, float t)
+float WaveProcessor(float t, float r)
 {
-    return A(t) * cos(k * r - w * t);
+    float wave = 0;
+    for (int i = 0; i < numberOfWaves; i++)
+    {
+        float _CurrentTime = t - _AFData[i].w;
+        
+        float temp = A(_CurrentTime,
+                        _AFData[i].x,
+                        _AFData[i].y);
+        
+        temp = temp * cos(_WaveData[i].z * r - _WaveData[i].w * _CurrentTime) + _AFData[i].x*0.5f;
+        
+        temp = temp * (abs(_WaveData[i].x * _CurrentTime - r) <= _WaveData[i].y * 0.5f);
+        
+        wave += temp;
+    }
+    
+    return clamp(wave, 0, 1);
 }
 
 [numthreads(8, 8, 1)]
 void NoiseGenerator(uint3 id : SV_DispatchThreadID)
 {
-    // TODO: insert actual code here!
+    float step = (1.0f) / (levels);
+    
+    uint3 wavePoint = id - int3(960 / 2, 960 / 2, 0);
+    float wRad = sqrt(wavePoint.x * wavePoint.x + wavePoint.y * wavePoint.y);
+    
     float noise =
         dot(
             snoise_grad((id + float3(0, _Offset1)) / _Frecuency1).xyz,
@@ -41,25 +68,8 @@ void NoiseGenerator(uint3 id : SV_DispatchThreadID)
     
     //Remap noise. I think dot(noise, noise) give us at most 1*1 + 1*1 + 1*1 = 3, and at least -1*1 -1*1 -1*1 = -3
     //So I remap [-3,3] to [0, 1]
-    //noise = 0;
-
-    noise = (noise / 15.0f + 0.5f) * 0.7f;
-    //noise = 0;
-    uint3 wavePoint = id - int3(960/2, 960/2, 0);
-    float vel = _W / _K;
-    float lamb = 2 * 3.14159 / _K;
-    float wNoise = 0;
-    
-    float wRad = sqrt(wavePoint.x * wavePoint.x + wavePoint.y * wavePoint.y);
-    
-    if (abs(vel * _Time - wRad) <= lamb*0.5f)
-    {
-        noise += WaveFunction(sqrt(wavePoint.x * wavePoint.x + wavePoint.y * wavePoint.y), _K, _W, _Time);
-    }
-    
-    noise = noise + wNoise;
-    
-    float step = (1.0f) / (levels);
+    noise = (noise / 15.0f + 0.5f) * 0.4f;
+    noise += WaveProcessor(_Time, wRad);
     
     for (int i = 0; i < levels; i++)
     {
