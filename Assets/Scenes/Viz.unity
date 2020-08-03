@@ -432,16 +432,16 @@ MonoBehaviour:
   _TimeScale:
     x: 15
     y: 20
-  _Levels: 7
+  _Levels: 8
   _Colors:
-  - {r: 0.35644355, g: 0.82936525, b: 0.8490566, a: 1}
+  - {r: 0.105882354, g: 0.16470589, b: 0.49019608, a: 1}
   - {r: 0.17221434, g: 0.5984653, b: 0.8113208, a: 1}
-  - {r: 0.10412959, g: 0.16326961, b: 0.49056602, a: 1}
+  - {r: 0.35686275, g: 0.82745105, b: 0.85098046, a: 1}
   _UIHolder: {fileID: 181933991}
   _TargetImagePrefab: {fileID: 8736642149949679981, guid: 7ff82b9055b9e38488843edf638e238d, type: 3}
   _Compute: {fileID: 7200000, guid: d90e4d9adeeae6d4dba4f189cf5ccf2a, type: 3}
-  _K: 0.01
-  _W: 10
+  _K: 0.003
+  _W: 1
 --- !u!1 &1068290313
 GameObject:
   m_ObjectHideFlags: 0

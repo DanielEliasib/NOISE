@@ -22,8 +22,8 @@ public class LayerManager : MonoBehaviour
     ComputeBuffer _ColorBuffer;
 
     //
-    [SerializeField, Range(0, 10)] private float _K = 0.5f;
-    [SerializeField, Range(0, 10)] private float _W = 0.5f;
+    [SerializeField, Range(0, 0.1f)] private float _K = 0.1f;
+    [SerializeField, Range(0, 100)] private float _W = 0.5f;
 
     private int _KernelIndex;
     private string _KernelName = "NoiseGenerator";
