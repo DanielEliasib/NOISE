@@ -393,6 +393,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 612870723}
+  - component: {fileID: 612870724}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -408,12 +409,36 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 612870722}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.3071364, y: -2.4698458, z: 9.97876}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &612870724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 612870722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e92c638b1696f4343a3fedcf34286400, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SpectrumSize: 64
+  ScalingStrategy: 2
+  SpectrumData: []
+  PostScaledSpectrumData: []
+  PostScaledMinMaxSpectrumData: []
+  PostScaledMax: 0
+  PostScaledEnergy: 0
+  IsIdle: 0
+  ThresholdToMin: 1.5
+  MinAmount: 0
+  ThresholdToMax: 1.5
+  MaxAmount: 1
 --- !u!1 &783983872
 GameObject:
   m_ObjectHideFlags: 0
