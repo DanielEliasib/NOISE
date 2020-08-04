@@ -102,7 +102,7 @@ public class LayerManager : MonoBehaviour
         for (int i = 0; i < _LevelsPriv; i++)
         {
             var obj = Instantiate(_TargetImagePrefab, _UIHolder.transform);
-            obj.transform.localPosition = new float3(0.0f,i*7.5f - 50,0.0f);
+            obj.transform.localPosition = new float3(0.0f,i*15f - 50,0.0f);
             obj.transform.localRotation = Quaternion.Euler(70, 0, -45);
 
             obj.name = "Tex: " + i;
