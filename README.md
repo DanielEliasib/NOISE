@@ -1,5 +1,5 @@
 ﻿# NOISE
-NOISE is a lightweight, GPU accelerated, music visualizer for windows[^1]. Still in early development.
+NOISE is a ~~lightweight~~, GPU accelerated, music visualizer for windows[^1]. Still in early development.
 
 ![Example](Examples/Screenshots/image.png)
 
