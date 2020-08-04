@@ -4,7 +4,8 @@ using UnityEngine;
 using System.Linq;
 using System;
 
-public class LoopbackAudio : MonoBehaviour
+//Doesn't need to be a mono
+public class LoopbackListener
 {
     #region Constants
 
@@ -14,8 +15,8 @@ public class LoopbackAudio : MonoBehaviour
 
     #region Private Member Variables
 
-    private RealtimeAudio _realtimeAudio;
-    private List<float> _postScaleAverages = new List<float>();
+    private RealtimeAudio _RealtimeAudio;
+    private List<float> _PostScaleAverages = new List<float>();
 
     #endregion
 
@@ -40,8 +41,15 @@ public class LoopbackAudio : MonoBehaviour
 
     #region Startup / Shutdown
 
-    public void Awake()
+    public LoopbackListener(int spectrumSize, ScalingStrategy scalingStrategy, float threshholdMin, float minAmount, float thresholMax, float maxAmount)
     {
+        SpectrumSize = spectrumSize;
+        ScalingStrategy = scalingStrategy;
+        ThresholdToMin = threshholdMin;
+        MinAmount = minAmount;
+        ThresholdToMax = threshholdMin;
+        MaxAmount = maxAmount;
+
         SpectrumData = new float[SpectrumSize];
         PostScaledSpectrumData = new float[SpectrumSize];
         PostScaledMinMaxSpectrumData = new float[SpectrumSize];
@@ -50,7 +58,7 @@ public class LoopbackAudio : MonoBehaviour
         float postScaleStep = 1.0f / SpectrumSize;
 
         // Setup loopback audio and start listening
-        _realtimeAudio = new RealtimeAudio(SpectrumSize, ScalingStrategy,(spectrumData) =>
+        _RealtimeAudio = new RealtimeAudio(SpectrumSize, ScalingStrategy, (spectrumData) =>
         {
             // Raw
             SpectrumData = spectrumData;
@@ -96,17 +104,17 @@ public class LoopbackAudio : MonoBehaviour
 
             // Calculate "energy" using the post scale average
             postScaleAverage = totalPostScaledValue / SpectrumSize;
-            _postScaleAverages.Add(postScaleAverage);
+            _PostScaleAverages.Add(postScaleAverage);
 
             // We only want to track EnergyAverageCount averages.
             // With a value of 1000, this will happen every couple seconds
-            if (_postScaleAverages.Count == EnergyAverageCount)
+            if (_PostScaleAverages.Count == EnergyAverageCount)
             {
-                _postScaleAverages.RemoveAt(0);
+                _PostScaleAverages.RemoveAt(0);
             }
 
             // Average the averages to get the energy.
-            PostScaledEnergy = _postScaleAverages.Average();
+            PostScaledEnergy = _PostScaleAverages.Average();
 
             // Pass 2: MinMax spectrum. Here we use the average.
             // If a given band falls below the average, reduce it 50%
@@ -115,11 +123,11 @@ public class LoopbackAudio : MonoBehaviour
             {
                 float minMaxed = PostScaledSpectrumData[i];
 
-                if(minMaxed <= postScaleAverage * ThresholdToMin)
+                if (minMaxed <= postScaleAverage * ThresholdToMin)
                 {
                     minMaxed *= MinAmount;
                 }
-                else if(minMaxed >= postScaleAverage * ThresholdToMax)
+                else if (minMaxed >= postScaleAverage * ThresholdToMax)
                 {
                     minMaxed *= MaxAmount;
                 }
@@ -129,17 +137,12 @@ public class LoopbackAudio : MonoBehaviour
 
             IsIdle = isIdle;
         });
-        _realtimeAudio.StartListen();
+        _RealtimeAudio.StartListen();
     }
 
-    public void Update()
+    public void OnDisable()
     {
-        
-    }
-
-    public void OnApplicationQuit()
-    {
-        _realtimeAudio.StopListen();
+        _RealtimeAudio.StopListen();
     }
 
     #endregion
