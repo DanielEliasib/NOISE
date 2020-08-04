@@ -445,8 +445,8 @@ MonoBehaviour:
   _K: 0.0374
   _W: 5
   _MinRange: 0
-  _MaxRange: 0.05
-  _Disc: 12.5
+  _MaxRange: 0.1
+  _Disc: 125
   _Delay: 0.03
 --- !u!114 &783983875
 MonoBehaviour:

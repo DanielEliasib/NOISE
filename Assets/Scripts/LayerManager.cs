@@ -58,9 +58,9 @@ public class LayerManager : MonoBehaviour
     private double _Cooldown;
     private bool _CooldownActive;
 
-    [SerializeField, Range(0.0f, 1.0f)] private float _MinRange, _MaxRange;
+    [SerializeField, Range(0.0f, 0.1f)] private float _MinRange, _MaxRange;
 
-    [SerializeField, Range(0, 20)] private float _Disc = 5.0f;
+    [SerializeField, Range(0, 165)] private float _Disc = 5.0f;
     [SerializeField, Range(0, 0.1f)] private float _Delay = 0.03f;
 
     void Awake()
@@ -102,7 +102,7 @@ public class LayerManager : MonoBehaviour
         for (int i = 0; i < _LevelsPriv; i++)
         {
             var obj = Instantiate(_TargetImagePrefab, _UIHolder.transform);
-            obj.transform.localPosition = new float3(0.0f,i*15f,0.0f);
+            obj.transform.localPosition = new float3(0.0f,i*7.5f - 50,0.0f);
             obj.transform.localRotation = Quaternion.Euler(70, 0, -45);
 
             obj.name = "Tex: " + i;
@@ -265,14 +265,15 @@ public class LayerManager : MonoBehaviour
 
             for (int i = _MinSpectrumIndex; i <= _MaxSpectrumIndex; i++)
             {
-                if (_Spectrum[i] > max)
-                    max = _Spectrum[i];
+                var _SpecVal = 100 * Mathf.Log(_Spectrum[i]);
+                if (_SpecVal > max)
+                    max = _SpecVal;
 
-                prom += _Spectrum[i];
+                prom += _SpecVal;
 
                 count++;
 
-                if (_Spectrum[i] > _Disc)
+                if (_SpecVal > _Disc)
                 {
                     CreateWave();
                     _Cooldown = _Delay;
@@ -291,9 +292,9 @@ public class LayerManager : MonoBehaviour
     {
         try
         {
-            _ColorBuffer.Dispose();
             _AFDataBuffer.Dispose();
             _WaveDataBuffer.Dispose();
+            _ColorBuffer.Dispose();
         }
         catch { }
         
