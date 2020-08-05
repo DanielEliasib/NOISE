@@ -58,9 +58,9 @@ public class LayerManager : MonoBehaviour
     private double _Cooldown;
     private bool _CooldownActive;
 
-    [SerializeField, Range(0.0f, 0.1f)] private float _MinRange, _MaxRange;
+    [SerializeField, Range(0.0f, 1.0f)] private float _MinRange, _MaxRange;
 
-    [SerializeField, Range(0, 165)] private float _Disc = 5.0f;
+    [SerializeField, Range(0, 250)] private float _Disc = 5.0f;
     [SerializeField, Range(0, 0.1f)] private float _Delay = 0.03f;
 
     void Awake()
