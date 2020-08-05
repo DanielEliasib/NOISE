@@ -384,36 +384,6 @@ MonoBehaviour:
   m_RequiresDepthTexture: 0
   m_RequiresColorTexture: 0
   m_Version: 2
---- !u!1 &612870722
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 612870723}
-  m_Layer: 0
-  m_Name: GameObject
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &612870723
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 612870722}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.3071364, y: -2.4698458, z: 9.97876}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 7
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &783983872
 GameObject:
   m_ObjectHideFlags: 0
@@ -424,6 +394,7 @@ GameObject:
   m_Component:
   - component: {fileID: 783983873}
   - component: {fileID: 783983874}
+  - component: {fileID: 783983875}
   m_Layer: 8
   m_Name: NOISE
   m_TagString: Untagged
@@ -473,6 +444,42 @@ MonoBehaviour:
   _Compute: {fileID: 7200000, guid: d90e4d9adeeae6d4dba4f189cf5ccf2a, type: 3}
   _K: 0.0374
   _W: 5
+  _MinRange: 0
+  _MaxRange: 0.1
+  _Disc: 125
+  _Delay: 0.03
+--- !u!114 &783983875
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 783983872}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7df85a96d77a174895ef84ebe10386e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _Frecuency1: 200
+  _Frecuency2: 150
+  _TimeScale:
+    x: 15
+    y: 20
+  _Levels: 15
+  _Colors:
+  - {r: 0.105882354, g: 0.16470589, b: 0.49019608, a: 1}
+  - {r: 0.17221434, g: 0.5984653, b: 0.8113208, a: 1}
+  - {r: 0.35686275, g: 0.82745105, b: 0.85098046, a: 1}
+  - {r: 0.5934051, g: 0.97165346, b: 0.990566, a: 1}
+  _UIHolder: {fileID: 181933991}
+  _TargetImagePrefab: {fileID: 8736642149949679981, guid: 7ff82b9055b9e38488843edf638e238d, type: 3}
+  _Compute: {fileID: 7200000, guid: d90e4d9adeeae6d4dba4f189cf5ccf2a, type: 3}
+  _K: 0.0374
+  _W: 5
+  _MinRange: 0.8
+  _MaxRange: 0.9
+  _Disc: 10
+  _Delay: 0.03
 --- !u!1 &1068290313
 GameObject:
   m_ObjectHideFlags: 0

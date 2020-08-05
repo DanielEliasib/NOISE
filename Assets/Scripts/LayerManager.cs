@@ -4,6 +4,7 @@ using UnityEngine;
 
 using UnityEngine.UI;
 using Unity.Mathematics;
+using CSCore.DMO;
 
 public class LayerManager : MonoBehaviour
 {
@@ -46,6 +47,31 @@ public class LayerManager : MonoBehaviour
     private List<float4> _AFData;
     private List<float4> _AFDataBack;
 
+    private LoopbackListener _Listener;
+
+    private float[] _Spectrum;
+
+    private int _MinSpectrumIndex;
+    private int _MaxSpectrumIndex;
+    private int _SpectrumRes = 120;
+
+    private double _Cooldown;
+    private bool _CooldownActive;
+
+    [SerializeField, Range(0.0f, 1.0f)] private float _MinRange, _MaxRange;
+
+    [SerializeField, Range(0, 250)] private float _Disc = 5.0f;
+    [SerializeField, Range(0, 0.1f)] private float _Delay = 0.03f;
+
+    void Awake()
+    {
+        _Listener = new LoopbackListener(_SpectrumRes, Assets.Scripts.Audio.ScalingStrategy.Sqrt, 0.8f, 0.5f, 1.2f, 1.5f);
+        _MinSpectrumIndex = (int)(_SpectrumRes * _MinRange);
+        _MaxSpectrumIndex = (int)(_SpectrumRes * _MaxRange);
+
+        _CooldownActive = false;
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -76,7 +102,7 @@ public class LayerManager : MonoBehaviour
         for (int i = 0; i < _LevelsPriv; i++)
         {
             var obj = Instantiate(_TargetImagePrefab, _UIHolder.transform);
-            obj.transform.localPosition = new float3(0.0f,i*15f,0.0f);
+            obj.transform.localPosition = new float3(0.0f,i*15f - 50,0.0f);
             obj.transform.localRotation = Quaternion.Euler(70, 0, -45);
 
             obj.name = "Tex: " + i;
@@ -92,7 +118,7 @@ public class LayerManager : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
         _Offset1.y = Time.time * _TimeScale.x;
         _Offset2.x = Time.time * _TimeScale.y;
@@ -109,6 +135,14 @@ public class LayerManager : MonoBehaviour
 
         for(int i = 0; i < _LevelsPriv; i++)
             Graphics.Blit(_Layers, _Aux[i], i, 0);
+
+        if (_CooldownActive)
+            _Cooldown -= Time.deltaTime;
+
+        ProcessAudio();
+
+        if (_Cooldown <= 0)
+            _CooldownActive = false;
     }
 
     void InitCompute()
@@ -189,6 +223,14 @@ public class LayerManager : MonoBehaviour
         }
     }
 
+    void CreateWave()
+    {
+        float w = _W, k = _K;
+        _WaveData.Add(new float4(w / k, 2 * Mathf.PI / k, k, w));
+        _AFData.Add(new float4(0.35f, 2.5f, w / (2 * Mathf.PI), Time.time));
+
+    }
+
     void ProcessWaves()
     {
         _AFDataBack.Clear();
@@ -209,10 +251,52 @@ public class LayerManager : MonoBehaviour
         _AFData = new List<float4>(_AFDataBack);
     }
 
+    private void ProcessAudio()
+    {
+        if (!_CooldownActive)
+        {
+            _Spectrum = _Listener.SpectrumData;
+            float max = 0;
+            float prom = 0;
+            int count = 0;
+
+            _MinSpectrumIndex = (int)(_SpectrumRes * _MinRange);
+            _MaxSpectrumIndex = (int)(_SpectrumRes * _MaxRange);
+
+            for (int i = _MinSpectrumIndex; i <= _MaxSpectrumIndex; i++)
+            {
+                var _SpecVal = 100 * Mathf.Log(_Spectrum[i]);
+                if (_SpecVal > max)
+                    max = _SpecVal;
+
+                prom += _SpecVal;
+
+                count++;
+
+                if (_SpecVal > _Disc)
+                {
+                    CreateWave();
+                    _Cooldown = _Delay;
+                    _CooldownActive = true;
+                    break;
+                }
+
+            }
+
+            prom = prom / count;
+            Debug.Log("Promedy: " + prom + "\nMax: " + max);
+        }
+    }
+
     private void OnDestroy()
     {
-        _ColorBuffer.Dispose();
-        _AFDataBuffer.Dispose();
-        _WaveDataBuffer.Dispose();
+        try
+        {
+            _AFDataBuffer.Dispose();
+            _WaveDataBuffer.Dispose();
+            _ColorBuffer.Dispose();
+        }
+        catch { }
+        
     }
 }
