@@ -6,6 +6,8 @@ using UnityEngine.UI;
 using Unity.Mathematics;
 using CSCore.DMO;
 
+using AL.AudioSystem;
+
 public class LayerManager : MonoBehaviour
 {
     [SerializeField, Range(1, 200)] private float _Frecuency1, _Frecuency2;
@@ -65,7 +67,7 @@ public class LayerManager : MonoBehaviour
 
     void Awake()
     {
-        _Listener = new LoopbackListener(_SpectrumRes, Assets.Scripts.Audio.ScalingStrategy.Sqrt, 0.8f, 0.5f, 1.2f, 1.5f);
+        _Listener = new LoopbackListener(_SpectrumRes, ScalingStrategy.Sqrt, 0.8f, 0.5f, 1.2f, 1.5f);
         _MinSpectrumIndex = (int)(_SpectrumRes * _MinRange);
         _MaxSpectrumIndex = (int)(_SpectrumRes * _MaxRange);
 

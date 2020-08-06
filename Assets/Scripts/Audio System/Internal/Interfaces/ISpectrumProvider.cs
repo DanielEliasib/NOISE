@@ -1,4 +1,4 @@
-﻿namespace Assets.Scripts.Audio
+﻿namespace AL.AudioSystem
 {
     internal interface ISpectrumProvider
     {

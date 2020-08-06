@@ -3,6 +3,7 @@ using CSCore;
 using CSCore.SoundIn;
 using CSCore.DSP;
 using CSCore.Streams;
+using AL.AudioSystem;
 
 namespace Assets.Scripts.Audio
 {
@@ -36,6 +37,8 @@ namespace Assets.Scripts.Audio
             _spectrumSize = spectrumSize;
             _scalingStrategy = scalingStrategy;
             _receiveAudio = receiveAudio;
+
+            
         }
 
         #endregion

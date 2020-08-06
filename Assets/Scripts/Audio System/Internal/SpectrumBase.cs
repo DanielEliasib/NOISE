@@ -5,7 +5,7 @@ using System.Diagnostics;
 using CSCore;
 using CSCore.DSP;
 
-namespace Assets.Scripts.Audio
+namespace AL.AudioSystem
 {
     internal class SpectrumBase : INotifyPropertyChanged
     {
@@ -18,9 +18,9 @@ namespace Assets.Scripts.Audio
         private int _fftSize;
         private bool _isXLogScale;
         private int _maxFftIndex;
-        private int _maximumFrequency = 20000;
+        private int _maximumFrequency = 250;
         private int _maximumFrequencyIndex;
-        private int _minimumFrequency = 20; //Default spectrum from 20Hz to 20kHz
+        private int _minimumFrequency = 60; //Default spectrum from 20Hz to 20kHz
         private int _minimumFrequencyIndex;
         private ScalingStrategy _scalingStrategy;
         private int[] _spectrumIndexMax;

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Assets.Scripts.Audio
+namespace AL.AudioSystem
 {
     internal class LineSpectrum : SpectrumBase
     {
