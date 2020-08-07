@@ -137,7 +137,12 @@ namespace AL.AudioSystem
             _spectrumIndexMax = _spectrumIndexMax.CheckBuffer(actualResolution, true);
             _spectrumLogScaleIndexMax = _spectrumLogScaleIndexMax.CheckBuffer(actualResolution, true);
 
-            double maxLog = Math.Log(actualResolution, actualResolution);
+            //?????? Isnt this one?
+            //double maxLog = Math.Log(actualResolution, actualResolution);
+            //UnityEngine.Debug.Log("Max log: " + maxLog);
+            double maxLog = 1.0;
+
+            
             for (int i = 1; i < actualResolution; i++)
             {
                 int logIndex =

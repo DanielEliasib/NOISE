@@ -106,7 +106,7 @@ namespace AL.AudioSystem
                     //OPTIMIZE
                     _SpectrumData = spectrumData.ToArray();
                     //ProcessSpectrum(ref spectrumData);
-                    Debug.Log("Data Size: " + _SpectrumData.Length);
+                    //Debug.Log("Data Size: " + _SpectrumData.Length);
                     //for (int i = 0; i < spectrumData.Length; i++)
                     //{
                     //    Debug.Log("Data[" + i + "]: " + spectrumData[i]);
