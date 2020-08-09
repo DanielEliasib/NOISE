@@ -43,41 +43,39 @@ namespace AL.AudioSystem
         public float[] GetSpectrumData(double maxValue, int bandIndex)
         {
             // Get spectrum data internal
-            if(fftBuffer == null)
+            if (fftBuffer == null)
                 fftBuffer = new float[(int)FftSize];
 
             UpdateFrequencyMapping(bandIndex);
 
-            if (SpectrumProvider.GetFftData(fftBuffer, this))
-            {
-                SpectrumPointData[] spectrumPoints = CalculateSpectrumPoints(maxValue, fftBuffer, bandIndex);
-                
-                // Convert to float[]
-                List<float> spectrumData = new List<float>();
-                spectrumPoints.ToList().
-                    ForEach
-                    (
-                        point =>
-                        {
-                            float val = (float)point.Value;
-                            if (_BandFrecuencies.TryGetValue(bandIndex, out var filterList))
-                            {
-                                foreach (var filter in filterList)
-                                    val = filter.Process(val);
-                            }
-                           
-                            spectrumData.Add(val);
-                        }
-                    );
-                return spectrumData.ToArray();
-            }
+            SpectrumProvider.GetFftData(fftBuffer, this);
 
-            return null;
+            SpectrumPointData[] spectrumPoints = CalculateSpectrumPoints(maxValue, fftBuffer, bandIndex);
+
+            // Convert to float[]
+            List<float> spectrumData = new List<float>();
+            spectrumPoints.ToList().
+                ForEach
+                (
+                    point =>
+                    {
+                        float val = (float)point.Value;
+                        if (_BandFrecuencies.TryGetValue(bandIndex, out var filterList))
+                        {
+                            foreach (var filter in filterList)
+                                val = filter.Process(val);
+                        }
+
+                        spectrumData.Add(val);
+                    }
+                );
+            return spectrumData.ToArray();
+
         }
 
         void Test()
         {
-            
+
         }
     }
 }

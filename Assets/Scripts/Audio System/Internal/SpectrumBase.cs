@@ -7,7 +7,7 @@ using CSCore.DSP;
 
 namespace AL.AudioSystem
 {
-    struct BandData
+    public struct BandData
     {
         public int _maximumFrequency;
         public int _maximumFrequencyIndex;

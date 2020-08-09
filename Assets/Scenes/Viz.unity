@@ -246,7 +246,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
@@ -375,7 +375,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 2
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -409,7 +409,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 783983872}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 4.84}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -422,7 +422,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 783983872}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7df85a96d77a174895ef84ebe10386e, type: 3}
   m_Name: 
@@ -443,10 +443,9 @@ MonoBehaviour:
   _Compute: {fileID: 7200000, guid: d90e4d9adeeae6d4dba4f189cf5ccf2a, type: 3}
   _K: 0.0374
   _W: 5
-  _MinRange: 0
-  _MaxRange: 0.1
-  _Disc: 125
-  _Delay: 0.03
+  _SpectrumRes: 250
+  _BeatMultiplier: 1.5
+  _QuadPrefab: {fileID: 5570489787528258002, guid: 5471dc9272952c848965f9d8e78ccb13, type: 3}
 --- !u!1 &1068290313
 GameObject:
   m_ObjectHideFlags: 0
@@ -533,7 +532,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1278578502
 Transform:
   m_ObjectHideFlags: 0
@@ -560,7 +559,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43fdcc5ff05fa7d418df8a215c7cd0bd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Texture: {fileID: 8400000, guid: 84c7164585156a14ca4f54fa8973829b, type: 2}
   _Line: {fileID: 1278578506}
   _BeatMultiplier: 2
 --- !u!73398921 &1278578504

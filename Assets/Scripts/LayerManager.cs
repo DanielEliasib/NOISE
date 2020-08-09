@@ -49,26 +49,23 @@ public class LayerManager : MonoBehaviour
     private List<float4> _AFData;
     private List<float4> _AFDataBack;
 
+    [SerializeField] private int _SpectrumRes = 250;
+    [SerializeField, Range(1, 10)] float _BeatMultiplier = 2;
 
-    private float[] _Spectrum;
-
-    private int _MinSpectrumIndex;
-    private int _MaxSpectrumIndex;
-    private int _SpectrumRes = 120;
+    [SerializeField] private GameObject _QuadPrefab;
 
     private double _Cooldown;
     private bool _CooldownActive;
 
-    [SerializeField, Range(0.0f, 1.0f)] private float _MinRange, _MaxRange;
+    private LoopbackCapture _Loopback;
 
-    [SerializeField, Range(0, 250)] private float _Disc = 5.0f;
-    [SerializeField, Range(0, 0.1f)] private float _Delay = 0.03f;
+    private List<float>[] _LongBandProms;
+
+    List<BandData> _BandData;
+    List<(DSPFilters, float)>[] _FilterData;
 
     void Awake()
     {
-        
-        _MinSpectrumIndex = (int)(_SpectrumRes * _MinRange);
-        _MaxSpectrumIndex = (int)(_SpectrumRes * _MaxRange);
 
         _CooldownActive = false;
     }
@@ -93,6 +90,8 @@ public class LayerManager : MonoBehaviour
         for(int i = 0; i < _Aux.Length; i++)
         {
             _Aux[i] = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
+            _Aux[i].filterMode = FilterMode.Bilinear;
+            
             _Aux[i].enableRandomWrite = true;
             _Aux[i].Create();
         }
@@ -103,7 +102,7 @@ public class LayerManager : MonoBehaviour
         for (int i = 0; i < _LevelsPriv; i++)
         {
             var obj = Instantiate(_TargetImagePrefab, _UIHolder.transform);
-            obj.transform.localPosition = new float3(0.0f,i*15f - 50,0.0f);
+            obj.transform.localPosition = new float3(0.0f, i * 15f - 50, 0.0f);
             obj.transform.localRotation = Quaternion.Euler(70, 0, -45);
 
             obj.name = "Tex: " + i;
@@ -116,6 +115,37 @@ public class LayerManager : MonoBehaviour
         _WaveDataBack = new List<float4>();
         _AFDataBack = new List<float4>();
         //_TargetImage.texture = _Layers;
+
+        //Loopback objects
+        _BandData = new List<BandData>()
+        {
+            new BandData()
+            {
+                _minimumFrequency = 60,
+                _maximumFrequency = 200
+            }
+        };
+
+        _FilterData = new List<(DSPFilters, float)>[]
+        {
+            new List<(DSPFilters, float)>()
+            {
+                (DSPFilters.LowPass, 250)
+            }
+        };
+
+        _Loopback = new LoopbackCapture(_SpectrumRes, ScalingStrategy.Sqrt, _BandData, _FilterData);
+
+        //  Operations are done in the fixed update. Set to 0.015 seconds.
+
+        _Loopback.StartListening();
+
+        _LongBandProms = new List<float>[_BandData.Count];
+        for (int i = 0; i < _LongBandProms.Length; i++)
+            _LongBandProms[i] = new List<float>(67);
+
+        _Offset1 += new float2(UnityEngine.Random.Range(-300,300), UnityEngine.Random.Range(-300, 300));
+        _Offset2 += new float2(UnityEngine.Random.Range(-300,300), UnityEngine.Random.Range(-300, 300));
     }
 
     // Update is called once per frame
@@ -224,12 +254,11 @@ public class LayerManager : MonoBehaviour
         }
     }
 
-    void CreateWave()
+    void CreateWave(float w, float k, float amp, float decay)
     {
-        float w = _W, k = _K;
         _WaveData.Add(new float4(w / k, 2 * Mathf.PI / k, k, w));
-        _AFData.Add(new float4(0.35f, 2.5f, w / (2 * Mathf.PI), Time.time));
-
+        _AFData.Add(new float4(amp, decay, w / (2 * Mathf.PI), Time.time));
+        _CooldownActive = true;
     }
 
     void ProcessWaves()
@@ -254,42 +283,67 @@ public class LayerManager : MonoBehaviour
 
     private void ProcessAudio()
     {
-        if (!_CooldownActive)
+        var _Spectrum = _Loopback.SpectrumData;
+
+        float[] _BandProms = new float[_Spectrum.Length];
+
+        for (int i = 0; i < _Spectrum.Length; i++)
         {
-            float max = 0;
-            float prom = 0;
-            int count = 0;
-
-            _MinSpectrumIndex = (int)(_SpectrumRes * _MinRange);
-            _MaxSpectrumIndex = (int)(_SpectrumRes * _MaxRange);
-
-            for (int i = _MinSpectrumIndex; i <= _MaxSpectrumIndex; i++)
+            if(_Spectrum[i] != null)
             {
-                var _SpecVal = 100 * Mathf.Log(_Spectrum[i]);
-                if (_SpecVal > max)
-                    max = _SpecVal;
-
-                prom += _SpecVal;
-
-                count++;
-
-                if (_SpecVal > _Disc)
+                for (int j = 0; j < _Spectrum[i].Length; j++)
                 {
-                    CreateWave();
-                    _Cooldown = _Delay;
-                    _CooldownActive = true;
-                    break;
+                    _BandProms[i] += _Spectrum[i][j];
                 }
 
+                _BandProms[i] = _Spectrum[i].Length <= 0 ? 0 : _BandProms[i] / _Spectrum[i].Length;
             }
+        }
 
-            prom = prom / count;
-            Debug.Log("Promedy: " + prom + "\nMax: " + max);
+        if (!_CooldownActive)
+        {
+            for(int i = 0; i < _LongBandProms.Length; i++)
+            {
+                var timeProm = 0.0f;
+
+                foreach(var prom in _LongBandProms[i])
+                {
+                    timeProm += prom;
+                }
+
+                timeProm = _LongBandProms[i].Count <= 0 ? 0 : timeProm / _LongBandProms[i].Count;
+
+                if (_BandProms[i] >= Mathf.Min(_BeatMultiplier * timeProm, timeProm + 1) && _BandProms[i] >= 0.15f)
+                {
+                    switch (i)
+                    {
+                        case 0:
+                            CreateWave(5, 0.03f, 0.25f, 5);
+                            break;
+                        case 1:
+
+                            break;
+                        default:
+                            break;
+                    }
+                    _Cooldown = 0.015 * 5;
+                }
+            }
+        }
+
+        for(int i = 0; i < _LongBandProms.Length; i++)
+        {
+            if (_LongBandProms[i].Count >= _LongBandProms[i].Capacity && _LongBandProms[i].Capacity > 0)
+                _LongBandProms[i].RemoveAt(0);
+
+            _LongBandProms[i].Add(_BandProms[i]);
         }
     }
 
     private void OnDestroy()
     {
+        _Loopback.StopListening();
+
         try
         {
             _AFDataBuffer.Dispose();

@@ -14,20 +14,13 @@ using System.Linq;
 
 public class AudioTester : MonoBehaviour
 {
-    [SerializeField] RenderTexture Texture;
-    Texture2D _InnerTexture;
     LoopbackCapture _Loopback;
 
     [SerializeField] LineRenderer _Line;
 
     Vector3[] _LinePos;
 
-    float[] _PosPeaks;
-    int[] _PosPeaksIndex;
-    float[] _PrePeaks;
-    int[] _PrePeaksIndex;
-
-    float[] _Spectrum;
+    float[][] _Spectrum;
 
     List<float> _BlueBandProms;
     bool _ProcessBlue, _SendWave;
@@ -40,23 +33,37 @@ public class AudioTester : MonoBehaviour
 
     [SerializeField, Range(1, 5)] float _BeatMultiplier = 2;
 
+    List<BandData> _BandData;
+    List<(DSPFilters, float)>[] _FilterData;
+
+    Dictionary<int, List<CSCore.DSP.BiQuad>> _Filters;
 
     // Start is called before the first frame update
     void Start()
     {
-        _SpectrumRes = Texture.width;
-        _Loopback = new LoopbackCapture(_SpectrumRes, ScalingStrategy.Sqrt);
+        _SpectrumRes = 500;
+
+        _BandData = new List<BandData>()
+        {
+            new BandData()
+            {
+                _minimumFrequency = 60,
+                _maximumFrequency = 200
+            }
+        };
+
+        _FilterData = new List<(DSPFilters, float)>[]
+        {
+            new List<(DSPFilters, float)>()
+            {
+                (DSPFilters.LowPass, 250)
+            }
+        };
+
+        _Loopback = new LoopbackCapture(_SpectrumRes, ScalingStrategy.Sqrt, _BandData, _FilterData);
         _Loopback.StartListening();
 
-        _InnerTexture = new Texture2D(Texture.width, Texture.height, TextureFormat.RGBAHalf, false);
-
-        _LinePos = new Vector3[Texture.width];
-
-        _PrePeaks = new float[1];
-        _PosPeaks = new float[1];
-
-        _PosPeaksIndex = new int[1];
-        _PrePeaksIndex = new int[1];
+        _LinePos = new Vector3[_SpectrumRes];
 
         _ProcessBlue = true;
         _SendWave = false;
@@ -74,36 +81,13 @@ public class AudioTester : MonoBehaviour
         this._Spectrum = _Spectrum;
         if (_Spectrum != null)
         {
-            _LinePos = new Vector3[_Spectrum.Length];
+            _LinePos = new Vector3[_Spectrum[0].Length];
 
             for (int i = 0; i < _LinePos.Length; i++)
-                _LinePos[i] = new Vector3(i * 0.01f, _Spectrum[i], 0);
-
-            //NewIndexes returns the index in the spectrum
-            var (newArray, newIndexes) = FindPeaks(ref _Spectrum);
-
-            //PosIndexes return the index in newIndexes
-            var (posPeaks, posIndexes) = FindPeaks(ref newArray);
-
-
-            _PrePeaksIndex = newIndexes.ToArray();
-            _PrePeaks = newArray.ToArray();
-
-            _PosPeaksIndex = posIndexes.ToArray();
-            _PosPeaks = posPeaks.ToArray();
-
-            //Debug.Log("Size: " + _Spectrum.Length);
-            for (int i = 0; i < posPeaks.Length; i++)
-            {
-                for (int j = 0; j < Texture.height; j++)
-                    _InnerTexture.SetPixel(i, j, new Color(i * 0.05f, posPeaks[i], 0, 1));
-
-                //Debug.Log("Current: " + _InnerTexture.getp);
-            }
+                _LinePos[i] = new Vector3(i * 0.01f, _Spectrum[0][i], 0);
 
             _ProcessBlue = true;
         }
-        _InnerTexture.Apply();
 
         if (_Line != null)
         {
@@ -111,7 +95,6 @@ public class AudioTester : MonoBehaviour
             _Line.SetPositions(_LinePos);
         }
 
-        Graphics.CopyTexture(_InnerTexture, Texture);
     }
 
     private void FixedUpdate()
@@ -187,20 +170,9 @@ public class AudioTester : MonoBehaviour
                 if (i / (float)_SpectrumRes >= 0 && i / (float)_SpectrumRes <= 0.8f)
                     Gizmos.color = Color.blue;
 
-                Gizmos.DrawWireSphere(new Vector3(i * 0.01f, _Spectrum[i]), 0.01f);
+                Gizmos.DrawWireSphere(new Vector3(i * 0.01f, _Spectrum[0][i]), 0.01f);
             }
 
-
-
-            for (int i = 0; i < _PosPeaks.Length; i++)
-            {
-                Gizmos.color = Color.red;
-
-                if (_PrePeaksIndex[_PosPeaksIndex[i]] / (float)_SpectrumRes >= 0 && _PrePeaksIndex[_PosPeaksIndex[i]] / (float)_SpectrumRes <= 0.8f)
-                    Gizmos.color = Color.blue;
-
-                Gizmos.DrawWireSphere(new Vector3(_PrePeaksIndex[_PosPeaksIndex[i]] * 0.01f, _PosPeaks[i]), 0.02f);
-            }
 
             Gizmos.color = Color.blue;
             Gizmos.DrawLine(new Vector3(0, _BlueLongProm), new Vector3(_SpectrumRes * 0.01f, _BlueLongProm));
@@ -235,22 +207,22 @@ public class AudioTester : MonoBehaviour
 
             if (horVal >= 0 && horVal <= 0.8f)
             {
-                _Proms.x += _Spectrum[i];
+                _Proms.x += _Spectrum[0][i];
                 _NumberPoints.x++;
             }
             else if (horVal > 0.8f && horVal <= 0.80f)
             {
-                _Proms.y += _Spectrum[i];
+                _Proms.y += _Spectrum[0][i];
                 _NumberPoints.y++;
             }
-            else if (horVal > 0.8f && horVal <= 0.95f )
+            else if (horVal > 0.8f && horVal <= 0.95f)
             {
-                _Proms.z += _Spectrum[i];
+                _Proms.z += _Spectrum[0][i];
                 _NumberPoints.z++;
             }
             else if (horVal > 0.95f)
             {
-                _Proms.w += _Spectrum[i];
+                _Proms.w += _Spectrum[0][i];
                 _NumberPoints.w++;
             }
         }

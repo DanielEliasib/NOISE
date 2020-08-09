@@ -12,6 +12,12 @@ using System.Linq;
 
 namespace AL.AudioSystem
 {
+    public enum DSPFilters
+    {
+        LowPass,
+        HighPass,
+    }
+
     public class LoopbackCapture
     {
         private const FftSize _CFftSize = FftSize.Fft8192;
@@ -32,12 +38,14 @@ namespace AL.AudioSystem
 
         IWaveSource _RealTimeSource;
 
-        public float[] SpectrumData { get { return _SpectrumData; } }
-        public float[] _SpectrumData;
+        public float[][] SpectrumData { get; private set; }
 
-        List<BandData> _BandData;
+        private List<BandData> _BandData;
+        private Dictionary<int, List<BiQuad>> _Filters;
 
-        public LoopbackCapture(int spectrumResolution, ScalingStrategy scalingStrategy)
+        private List<(DSPFilters, float)>[] _FilterData;
+
+        public LoopbackCapture(int spectrumResolution, ScalingStrategy scalingStrategy, List<BandData> bandData, List<(DSPFilters, float)>[] filters)
         {
             _Capture = new WasapiLoopbackCapture();
             _Capture.Initialize();
@@ -47,12 +55,17 @@ namespace AL.AudioSystem
 
             _SpectrumRes = spectrumResolution;
             _ScalingStrategy = scalingStrategy;
+
+            _BandData = bandData;
+            
+            _Filters = new Dictionary<int, List<BiQuad>>();
+
+            _FilterData = filters;
+
         }
         
         public void StartListening()
         {
-            _SpectrumData = new float[1];
-
             _Capture = new WasapiLoopbackCapture();
             _Capture.Initialize();
 
@@ -66,19 +79,33 @@ namespace AL.AudioSystem
 
             _InternalSpectrum = new float[(int)_CFftSize];
 
-            _BandData = new List<BandData>()
+            for (int i = 0; i < _FilterData.Length; i++)
             {
-                new BandData()
+                List<BiQuad> currentFilters = new List<BiQuad>();
+                for (int j = 0; j < _FilterData[i].Count; j++)
                 {
-                    _maximumFrequency = 150,
-                    _minimumFrequency = 60
-                },
-                new BandData()
-                {
-                    _maximumFrequency = 250,
-                    _minimumFrequency = 200
+                    BiQuad filter = null;
+                    (var filterType, var frec) = _FilterData[i][j];
+                    switch (filterType)
+                    {
+                        case DSPFilters.LowPass:
+                            filter = new LowpassFilter(_SoundSource.WaveFormat.SampleRate, frec);
+                            break;
+                        case DSPFilters.HighPass:
+                            filter = new HighpassFilter(_SoundSource.WaveFormat.SampleRate, frec);
+                            break;
+                        default:
+                            break;
+                    }
+
+                    if(filter != null)
+                    {
+                        currentFilters.Add(filter);
+                    }
                 }
-            };
+
+                _Filters.Add(i, currentFilters);
+            }
 
             _BandSpectrum = new BandSpectrumProcessor(_CFftSize, _BandData)
             {
@@ -89,8 +116,14 @@ namespace AL.AudioSystem
                 ScalingStrategy = _ScalingStrategy
             };
 
-            _BandSpectrum.AddFilter(new LowpassFilter(_SoundSource.WaveFormat.SampleRate, 200), 0);
-            _BandSpectrum.AddFilter(new LowpassFilter(_SoundSource.WaveFormat.SampleRate, 300), 1);
+            foreach(var filterPair in _Filters)
+            {
+                var currentList = filterPair.Value;
+                for (int i = 0; i < currentList.Count; i++)
+                {
+                    _BandSpectrum.AddFilter(currentList[i], filterPair.Key);
+                }
+            }
 
             _Capture.Start();
 
@@ -101,6 +134,8 @@ namespace AL.AudioSystem
             _SoundSource.DataAvailable += _SoundSource_DataAvailable;
 
             _SingleBlockNotificationStream.SingleBlockRead += singleBlockNotificationStream_SingleBlockRead;
+
+            SpectrumData = new float[_BandData.Count][];
         }
 
         public void StopListening()
@@ -121,13 +156,15 @@ namespace AL.AudioSystem
 
             while (_RealTimeSource.Read(buffer, 0, buffer.Length) > 0)
             {
-                float[] spectrumData = _BandSpectrum.GetSpectrumData(_MaxAudioValue, 1);
-
-                if (spectrumData != null)
+                for(int i  = 0; i < SpectrumData.Length; i++)
                 {
-                    //OPTIMIZE
-                    
-                    _SpectrumData = spectrumData.ToArray();
+                    float[] spectrumData = _BandSpectrum.GetSpectrumData(_MaxAudioValue, i);
+
+                    if (spectrumData != null)
+                    {
+                        //OPTIMIZE
+                        SpectrumData[i] = spectrumData.ToArray();
+                    }
                 }
             }
         }

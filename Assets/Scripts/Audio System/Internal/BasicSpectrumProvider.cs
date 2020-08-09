@@ -30,10 +30,10 @@ namespace AL.AudioSystem
 
         public bool GetFftData(float[] fftResultBuffer, object context)
         {
-            if (_contexts.Contains(context))
-                return false;
+            //if (_contexts.Contains(context))
+            //    return false;
 
-            _contexts.Add(context);
+            //_contexts.Add(context);
             GetFftData(fftResultBuffer);
             return true;
         }
