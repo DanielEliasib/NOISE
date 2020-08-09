@@ -7,6 +7,14 @@ using CSCore.DSP;
 
 namespace AL.AudioSystem
 {
+    struct BandData
+    {
+        public int _maximumFrequency;
+        public int _maximumFrequencyIndex;
+        public int _minimumFrequency; //Default spectrum from 20Hz to 20kHz
+        public int _minimumFrequencyIndex;
+    }
+
     internal class SpectrumBase : INotifyPropertyChanged
     {
         private const int ScaleFactorLinear = 9;
@@ -19,10 +27,14 @@ namespace AL.AudioSystem
         private bool _isXLogScale;
         private int _maxFftIndex;
 
-        private int _maximumFrequency = 150;
-        private int _maximumFrequencyIndex;
-        private int _minimumFrequency = 60; //Default spectrum from 20Hz to 20kHz
-        private int _minimumFrequencyIndex;
+        //private int _maximumFrequency = 150;
+        //private int _maximumFrequencyIndex;
+        //private int _minimumFrequency = 60; //Default spectrum from 20Hz to 20kHz
+        //private int _minimumFrequencyIndex;
+
+        //**************
+        private List<BandData> _BandFrecuencies = new List<BandData>();
+        //**************
 
         private ScalingStrategy _scalingStrategy;
 
@@ -32,37 +44,6 @@ namespace AL.AudioSystem
 
         protected int SpectrumResolution;
         private bool _useAverage;
-
-        public int MaximumFrequency
-        {
-            get { return _maximumFrequency; }
-            set
-            {
-                if (value <= MinimumFrequency)
-                {
-                    throw new ArgumentOutOfRangeException("value",
-                        "Value must not be less or equal the MinimumFrequency.");
-                }
-                _maximumFrequency = value;
-                UpdateFrequencyMapping();
-
-                RaisePropertyChanged("MaximumFrequency");
-            }
-        }
-
-        public int MinimumFrequency
-        {
-            get { return _minimumFrequency; }
-            set
-            {
-                if (value < 0)
-                    throw new ArgumentOutOfRangeException("value");
-                _minimumFrequency = value;
-                UpdateFrequencyMapping();
-
-                RaisePropertyChanged("MinimumFrequency");
-            }
-        }
 
         [BrowsableAttribute(false)]
         public ISpectrumProvider SpectrumProvider
@@ -78,13 +59,19 @@ namespace AL.AudioSystem
             }
         }
 
+        public void SetBandData(List<BandData> bandData)
+        {
+            _BandFrecuencies = bandData;
+        }
+
         public bool IsXLogScale
         {
             get { return _isXLogScale; }
             set
             {
                 _isXLogScale = value;
-                UpdateFrequencyMapping();
+                for(int i = 0; i<_BandFrecuencies.Count; i++)
+                    UpdateFrequencyMapping(i);
                 RaisePropertyChanged("IsXLogScale");
             }
         }
@@ -127,43 +114,51 @@ namespace AL.AudioSystem
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected virtual void UpdateFrequencyMapping()
+        protected virtual void UpdateFrequencyMapping(int bandIndex)
         {
-            _maximumFrequencyIndex = Math.Min(_spectrumProvider.GetFftBandIndex(MaximumFrequency) + 1, _maxFftIndex);
-            _minimumFrequencyIndex = Math.Min(_spectrumProvider.GetFftBandIndex(MinimumFrequency), _maxFftIndex);
+            BandData _CurrentBand = _BandFrecuencies[bandIndex];
+
+            _CurrentBand._maximumFrequencyIndex = 
+                Math.Min(_spectrumProvider.GetFftBandIndex(_CurrentBand._maximumFrequency) + 1, _maxFftIndex);
+            
+            _CurrentBand._minimumFrequencyIndex = 
+                Math.Min(_spectrumProvider.GetFftBandIndex(_CurrentBand._minimumFrequency), _maxFftIndex);
 
             int actualResolution = SpectrumResolution;
 
-            int indexCount = _maximumFrequencyIndex - _minimumFrequencyIndex;
-            double linearIndexBucketSize = Math.Round(indexCount / (double) actualResolution, 3);
+            int indexCount = _CurrentBand._maximumFrequencyIndex - _CurrentBand._minimumFrequencyIndex;
+            double linearIndexBucketSize = Math.Round(indexCount / (double)actualResolution, 3);
 
             _spectrumIndexMax = _spectrumIndexMax.CheckBuffer(actualResolution, true);
             _spectrumLogScaleIndexMax = _spectrumLogScaleIndexMax.CheckBuffer(actualResolution, true);
 
             //?????? Isnt this one?
             //double maxLog = Math.Log(actualResolution, actualResolution);
-            //UnityEngine.Debug.Log("Max log: " + maxLog);
             double maxLog = 1.0;
-            
+
             for (int i = 1; i < actualResolution; i++)
             {
                 int logIndex =
-                    (int) ((maxLog - Math.Log((actualResolution + 1) - i, (actualResolution + 1))) * indexCount) +
-                    _minimumFrequencyIndex;
+                    (int)((maxLog - Math.Log((actualResolution + 1) - i, (actualResolution + 1))) * indexCount) +
+                    _CurrentBand._minimumFrequencyIndex;
 
-                _spectrumIndexMax[i - 1] = _minimumFrequencyIndex + (int) (i * linearIndexBucketSize);
+                _spectrumIndexMax[i - 1] = _CurrentBand._minimumFrequencyIndex + (int)(i * linearIndexBucketSize);
                 _spectrumLogScaleIndexMax[i - 1] = logIndex;
             }
 
             if (actualResolution > 0)
             {
                 _spectrumIndexMax[_spectrumIndexMax.Length - 1] =
-                    _spectrumLogScaleIndexMax[_spectrumLogScaleIndexMax.Length - 1] = _maximumFrequencyIndex;
+                    _spectrumLogScaleIndexMax[_spectrumLogScaleIndexMax.Length - 1] = _CurrentBand._maximumFrequencyIndex;
             }
+
+            _BandFrecuencies[bandIndex] = _CurrentBand;
         }
 
-        protected virtual SpectrumPointData[] CalculateSpectrumPoints(double maxValue, float[] fftBuffer)
+        protected virtual SpectrumPointData[] CalculateSpectrumPoints(double maxValue, float[] fftBuffer, int bandIndex)
         {
+            BandData _CurrentBand = _BandFrecuencies[bandIndex];
+
             var dataPoints = new List<SpectrumPointData>();
 
             double value0 = 0, value = 0;
@@ -171,7 +166,7 @@ namespace AL.AudioSystem
             double actualMaxValue = maxValue;
             int spectrumPointIndex = 0;
 
-            for (int i = _minimumFrequencyIndex; i <= _maximumFrequencyIndex; i++)
+            for (int i = _CurrentBand._minimumFrequencyIndex; i <= _CurrentBand._maximumFrequencyIndex; i++)
             {
                 switch (ScalingStrategy)
                 {
@@ -225,7 +220,6 @@ namespace AL.AudioSystem
                 PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        [DebuggerDisplay("{Value}")]
         protected struct SpectrumPointData
         {
             public int SpectrumPointIndex;

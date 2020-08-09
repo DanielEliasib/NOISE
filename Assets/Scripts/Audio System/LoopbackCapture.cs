@@ -21,7 +21,7 @@ namespace AL.AudioSystem
         SoundInSource _SoundSource;
 
         BasicSpectrumProvider _BasicSpectrumProvider;
-        LineSpectrum _LineSpectrum;
+        BandSpectrumProcessor _BandSpectrum;
 
         int _SpectrumRes;
         private ScalingStrategy _ScalingStrategy;
@@ -34,6 +34,8 @@ namespace AL.AudioSystem
 
         public float[] SpectrumData { get { return _SpectrumData; } }
         public float[] _SpectrumData;
+
+        List<BandData> _BandData;
 
         public LoopbackCapture(int spectrumResolution, ScalingStrategy scalingStrategy)
         {
@@ -64,7 +66,21 @@ namespace AL.AudioSystem
 
             _InternalSpectrum = new float[(int)_CFftSize];
 
-            _LineSpectrum = new LineSpectrum(_CFftSize, _SoundSource.WaveFormat.SampleRate, 150)
+            _BandData = new List<BandData>()
+            {
+                new BandData()
+                {
+                    _maximumFrequency = 150,
+                    _minimumFrequency = 60
+                },
+                new BandData()
+                {
+                    _maximumFrequency = 250,
+                    _minimumFrequency = 200
+                }
+            };
+
+            _BandSpectrum = new BandSpectrumProcessor(_CFftSize, _BandData)
             {
                 SpectrumProvider = _BasicSpectrumProvider,
                 BarCount = _SpectrumRes,
@@ -72,6 +88,9 @@ namespace AL.AudioSystem
                 IsXLogScale = true,
                 ScalingStrategy = _ScalingStrategy
             };
+
+            _BandSpectrum.AddFilter(new LowpassFilter(_SoundSource.WaveFormat.SampleRate, 200), 0);
+            _BandSpectrum.AddFilter(new LowpassFilter(_SoundSource.WaveFormat.SampleRate, 300), 1);
 
             _Capture.Start();
 
@@ -102,9 +121,7 @@ namespace AL.AudioSystem
 
             while (_RealTimeSource.Read(buffer, 0, buffer.Length) > 0)
             {
-
-                float[] spectrumData = _LineSpectrum.GetSpectrumData(_MaxAudioValue);
-
+                float[] spectrumData = _BandSpectrum.GetSpectrumData(_MaxAudioValue, 1);
 
                 if (spectrumData != null)
                 {
