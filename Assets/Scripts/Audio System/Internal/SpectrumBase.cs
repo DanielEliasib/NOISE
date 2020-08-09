@@ -18,11 +18,14 @@ namespace AL.AudioSystem
         private int _fftSize;
         private bool _isXLogScale;
         private int _maxFftIndex;
-        private int _maximumFrequency = 250;
+
+        private int _maximumFrequency = 150;
         private int _maximumFrequencyIndex;
         private int _minimumFrequency = 60; //Default spectrum from 20Hz to 20kHz
         private int _minimumFrequencyIndex;
+
         private ScalingStrategy _scalingStrategy;
+
         private int[] _spectrumIndexMax;
         private int[] _spectrumLogScaleIndexMax;
         private ISpectrumProvider _spectrumProvider;
@@ -141,7 +144,6 @@ namespace AL.AudioSystem
             //double maxLog = Math.Log(actualResolution, actualResolution);
             //UnityEngine.Debug.Log("Max log: " + maxLog);
             double maxLog = 1.0;
-
             
             for (int i = 1; i < actualResolution; i++)
             {

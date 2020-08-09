@@ -60,7 +60,7 @@ namespace Assets.Scripts.Audio
 
             _basicSpectrumProvider = new BasicSpectrumProvider(_soundInSource.WaveFormat.Channels, _soundInSource.WaveFormat.SampleRate, CFftSize);
 
-            _lineSpectrum = new LineSpectrum(CFftSize)
+            _lineSpectrum = new LineSpectrum(CFftSize,-1,-1)
             {
                 SpectrumProvider = _basicSpectrumProvider,
                 BarCount = _spectrumSize,

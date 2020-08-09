@@ -14,7 +14,7 @@ namespace AL.AudioSystem
 {
     public class LoopbackCapture
     {
-        private const FftSize _CFftSize = FftSize.Fft4096;
+        private const FftSize _CFftSize = FftSize.Fft8192;
         public const int _MaxAudioValue = 10;
 
         WasapiLoopbackCapture _Capture;
@@ -27,6 +27,8 @@ namespace AL.AudioSystem
         private ScalingStrategy _ScalingStrategy;
 
         private SingleBlockNotificationStream _SingleBlockNotificationStream;
+
+        private float[] _InternalSpectrum;
 
         IWaveSource _RealTimeSource;
 
@@ -60,7 +62,9 @@ namespace AL.AudioSystem
                     _SoundSource.WaveFormat.SampleRate, 
                     _CFftSize);
 
-            _LineSpectrum = new LineSpectrum(_CFftSize)
+            _InternalSpectrum = new float[(int)_CFftSize];
+
+            _LineSpectrum = new LineSpectrum(_CFftSize, _SoundSource.WaveFormat.SampleRate, 150)
             {
                 SpectrumProvider = _BasicSpectrumProvider,
                 BarCount = _SpectrumRes,
@@ -98,19 +102,15 @@ namespace AL.AudioSystem
 
             while (_RealTimeSource.Read(buffer, 0, buffer.Length) > 0)
             {
-                
+
                 float[] spectrumData = _LineSpectrum.GetSpectrumData(_MaxAudioValue);
+
 
                 if (spectrumData != null)
                 {
                     //OPTIMIZE
+                    
                     _SpectrumData = spectrumData.ToArray();
-                    //ProcessSpectrum(ref spectrumData);
-                    //Debug.Log("Data Size: " + _SpectrumData.Length);
-                    //for (int i = 0; i < spectrumData.Length; i++)
-                    //{
-                    //    Debug.Log("Data[" + i + "]: " + spectrumData[i]);
-                    //}
                 }
             }
         }
@@ -118,33 +118,6 @@ namespace AL.AudioSystem
         private void singleBlockNotificationStream_SingleBlockRead(object sender, SingleBlockReadEventArgs e)
         {
             _BasicSpectrumProvider.Add(e.Left, e.Right);
-        }
-
-        private void ProcessSpectrum(ref float[] spectrum)
-        {
-            float postScaleAverage = 0.0f;
-            float[] _PostScaled = new float[_SpectrumRes];
-
-            float postScaleStep = 1.0f / _SpectrumRes;
-            float postScaledPoint = postScaleStep;
-
-            //Scale spectrum
-            for (int i = 0; i < _SpectrumRes; i++)
-            {
-                if(i == 0)
-                {
-                    _PostScaled[i] = spectrum[i];
-                }
-                else
-                {
-                    float postScaleValue = postScaledPoint * spectrum[i] * (RealtimeAudio.MaxAudioValue - (1.0f - postScaledPoint));
-                    _PostScaled[i] = Mathf.Clamp(postScaleValue, 0, RealtimeAudio.MaxAudioValue);
-                }
-
-                postScaledPoint += postScaleStep;
-            }
-
-            _SpectrumData = _PostScaled.ToArray();
         }
         
     }

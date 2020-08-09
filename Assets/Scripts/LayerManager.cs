@@ -49,7 +49,6 @@ public class LayerManager : MonoBehaviour
     private List<float4> _AFData;
     private List<float4> _AFDataBack;
 
-    private LoopbackListener _Listener;
 
     private float[] _Spectrum;
 
@@ -67,7 +66,7 @@ public class LayerManager : MonoBehaviour
 
     void Awake()
     {
-        _Listener = new LoopbackListener(_SpectrumRes, ScalingStrategy.Sqrt, 0.8f, 0.5f, 1.2f, 1.5f);
+        
         _MinSpectrumIndex = (int)(_SpectrumRes * _MinRange);
         _MaxSpectrumIndex = (int)(_SpectrumRes * _MaxRange);
 
@@ -257,7 +256,6 @@ public class LayerManager : MonoBehaviour
     {
         if (!_CooldownActive)
         {
-            _Spectrum = _Listener.SpectrumData;
             float max = 0;
             float prom = 0;
             int count = 0;
