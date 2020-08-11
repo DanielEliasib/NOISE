@@ -7,6 +7,8 @@ using Unity.Mathematics;
 using CSCore.DMO;
 
 using AL.AudioSystem;
+using UnityEngine.SceneManagement;
+using System.Linq;
 
 public class LayerManager : MonoBehaviour
 {
@@ -25,11 +27,7 @@ public class LayerManager : MonoBehaviour
     ComputeBuffer _ColorBuffer;
     ComputeBuffer _WaveDataBuffer;
     ComputeBuffer _AFDataBuffer;
-
-    //
-    [SerializeField, Range(0, 0.1f)] private float _K = 0.1f;
-    [SerializeField, Range(0, 100)] private float _W = 0.5f;
-
+     
     private int _KernelIndex;
     private string _KernelName = "NoiseGenerator";
 
@@ -42,7 +40,7 @@ public class LayerManager : MonoBehaviour
     private RenderTexture _Layers;
     private RenderTexture[] _Aux;
 
-    private int width = 960, height = 960;
+    private int width = 512, height = 512;
 
     private List<float4> _WaveData;
     private List<float4> _WaveDataBack;
@@ -50,9 +48,6 @@ public class LayerManager : MonoBehaviour
     private List<float4> _AFDataBack;
 
     [SerializeField] private int _SpectrumRes = 250;
-    [SerializeField, Range(1, 10)] float _BeatMultiplier = 2;
-
-    [SerializeField] private GameObject _QuadPrefab;
 
     private double _Cooldown;
     private bool _CooldownActive;
@@ -60,12 +55,26 @@ public class LayerManager : MonoBehaviour
     private LoopbackCapture _Loopback;
 
     private List<float>[] _LongBandProms;
+    private float[] _Peaks;
 
     List<BandData> _BandData;
     List<(DSPFilters, float)>[] _FilterData;
 
+    private ScreenSizeListener _SizeListener;
+    private List<RawImage> _LayerContainer;
+
+
+    //Public Info
+    [SerializeField] public float[] _BeatMultipliers;
+    [SerializeField] public float[] _LongProms;
+    [SerializeField] public float[][] _Spectrum;
+
     void Awake()
     {
+        _SizeListener = new ScreenSizeListener();
+        _SizeListener.Awake();
+
+        _LayerContainer = new List<RawImage>();
 
         _CooldownActive = false;
     }
@@ -108,7 +117,12 @@ public class LayerManager : MonoBehaviour
             obj.name = "Tex: " + i;
 
             obj.texture = _Aux[i];
+
+            _LayerContainer.Add(obj);
         }
+
+        _SizeListener._Layers = _LayerContainer;
+        _SizeListener.AdjustScale();
 
         _WaveData = new List<float4>();
         _AFData = new List<float4>();
@@ -122,7 +136,12 @@ public class LayerManager : MonoBehaviour
             new BandData()
             {
                 _minimumFrequency = 60,
-                _maximumFrequency = 200
+                _maximumFrequency = 150
+            },
+            new BandData()
+            {
+                _minimumFrequency = 150,
+                _maximumFrequency = 300
             }
         };
 
@@ -130,31 +149,45 @@ public class LayerManager : MonoBehaviour
         {
             new List<(DSPFilters, float)>()
             {
-                (DSPFilters.LowPass, 250)
+                (DSPFilters.LowPass, 150)
+            },
+            new List<(DSPFilters, float)>()
+            {
+                (DSPFilters.LowPass, 300)
             }
         };
 
         _Loopback = new LoopbackCapture(_SpectrumRes, ScalingStrategy.Sqrt, _BandData, _FilterData);
 
-        //  Operations are done in the fixed update. Set to 0.015 seconds.
-
+        //  Operations are done in the fixed update. Set to 0.015 seconds, so 67 frames is about 1 second.
         _Loopback.StartListening();
 
         _LongBandProms = new List<float>[_BandData.Count];
+        _BeatMultipliers = new float[_BandData.Count];
+        _Peaks = new float[_BandData.Count];
+        _LongProms = new float[_BandData.Count];
+
         for (int i = 0; i < _LongBandProms.Length; i++)
+        {
             _LongBandProms[i] = new List<float>(67);
+            _BeatMultipliers[i] = 1.5f;
+            _Peaks[i] = float.MinValue;
+        }
+            
 
         _Offset1 += new float2(UnityEngine.Random.Range(-300,300), UnityEngine.Random.Range(-300, 300));
         _Offset2 += new float2(UnityEngine.Random.Range(-300,300), UnityEngine.Random.Range(-300, 300));
+
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
+        _SizeListener.Update();
+
         _Offset1.y = Time.time * _TimeScale.x;
         _Offset2.x = Time.time * _TimeScale.y;
 
-        ProcessInput();
         ProcessWaves();
         WaveBufferManager(_WaveData.Count);
 
@@ -241,19 +274,6 @@ public class LayerManager : MonoBehaviour
         _Compute.SetFloats("_Offset2", new float[] { offset2.x, offset2.y });
     }
 
-    void ProcessInput()
-    {
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            
-            float w = _W, k = _K;
-            _WaveData.Add(new float4(w/k, 2 * Mathf.PI/k, k, w));
-            _AFData.Add(new float4(0.5f, 2.5f, w/(2 * Mathf.PI),Time.time));
-
-            Debug.Log("Wave added: " + _WaveData[_WaveData.Count - 1] + "\n" + _AFData[_AFData.Count - 1]);
-        }
-    }
-
     void CreateWave(float w, float k, float amp, float decay)
     {
         _WaveData.Add(new float4(w / k, 2 * Mathf.PI / k, k, w));
@@ -283,20 +303,42 @@ public class LayerManager : MonoBehaviour
 
     private void ProcessAudio()
     {
-        var _Spectrum = _Loopback.SpectrumData;
+        _Spectrum = _Loopback.SpectrumData;
 
         float[] _BandProms = new float[_Spectrum.Length];
 
         for (int i = 0; i < _Spectrum.Length; i++)
         {
-            if(_Spectrum[i] != null)
+            _Peaks[i] = float.MinValue;
+
+            if (_Spectrum[i] != null)
             {
                 for (int j = 0; j < _Spectrum[i].Length; j++)
                 {
                     _BandProms[i] += _Spectrum[i][j];
+
+                    //Find Peaks
+                    if(j <= 0)
+                    {
+                        if (_Spectrum[i][j] > _Spectrum[i][j+1])
+                            _Peaks[i] = _Spectrum[i][j];
+                    }
+                    else if (j >= _Spectrum.Length - 1)
+                    {
+                        if (_Spectrum[i][j] > _Spectrum[i][j-1])
+                            _Peaks[i] = _Spectrum[i][j];
+                    }
+                    else
+                    {
+                        if(_Spectrum[i][j] > _Spectrum[i][j - 1] && _Spectrum[i][j] > _Spectrum[i][j + 1])
+                            _Peaks[i] = _Spectrum[i][j];
+                    }
+
                 }
 
                 _BandProms[i] = _Spectrum[i].Length <= 0 ? 0 : _BandProms[i] / _Spectrum[i].Length;
+
+
             }
         }
 
@@ -313,15 +355,17 @@ public class LayerManager : MonoBehaviour
 
                 timeProm = _LongBandProms[i].Count <= 0 ? 0 : timeProm / _LongBandProms[i].Count;
 
-                if (_BandProms[i] >= Mathf.Min(_BeatMultiplier * timeProm, timeProm + 1) && _BandProms[i] >= 0.15f)
+                _LongProms[i] = timeProm;
+                
+                if (_Peaks[i] >= Mathf.Min(_BeatMultipliers[i] * timeProm, timeProm + 1) && _BandProms[i] >= 0.25f)
                 {
                     switch (i)
                     {
                         case 0:
-                            CreateWave(5, 0.03f, 0.25f, 5);
+                            CreateWave(5.0f, 0.03f, 0.25f, 2);
                             break;
                         case 1:
-
+                            CreateWave(7.5f, 0.03f, 0.20f, 5);
                             break;
                         default:
                             break;
@@ -338,6 +382,8 @@ public class LayerManager : MonoBehaviour
 
             _LongBandProms[i].Add(_BandProms[i]);
         }
+
+            
     }
 
     private void OnDestroy()

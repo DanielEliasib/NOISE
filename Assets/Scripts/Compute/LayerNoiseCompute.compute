@@ -57,7 +57,7 @@ void NoiseGenerator(uint3 id : SV_DispatchThreadID)
 {
     float step = (1.0f) / (levels);
     
-    uint3 wavePoint = id - int3(960 / 2, 960 / 2, 0);
+    uint3 wavePoint = id - int3(512 / 2, 512 / 2, 0);
     float wRad = sqrt(wavePoint.x * wavePoint.x + wavePoint.y * wavePoint.y);
     
     float noise =
@@ -73,17 +73,17 @@ void NoiseGenerator(uint3 id : SV_DispatchThreadID)
     
     for (int i = 0; i < levels; i++)
     {
+        int currentColor = (int)(i * step * (numberOfColors - 1));
+
+        float3 color = lerp(_Colors[currentColor], _Colors[currentColor + 1], i * step * numberOfColors - currentColor);
+
         if ((i + 1) * step <= noise)
         {
-            int currentColor = (int) (i * step * (numberOfColors - 1));
-            
-            float3 color = lerp(_Colors[currentColor], _Colors[currentColor + 1], i * step * numberOfColors - currentColor);
-            
             _TexArray[uint3(id.xy, i)] = float4(color, 1.0f);
         }
         else
         {
-            _TexArray[uint3(id.xy, i)] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+            _TexArray[uint3(id.xy, i)] = float4(color, 0.0f);
         }
         
         
