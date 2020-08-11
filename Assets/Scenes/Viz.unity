@@ -322,7 +322,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.54509807}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -486,7 +486,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_RenderShadows: 1
+  m_RenderShadows: 0
   m_RequiresDepthTextureOption: 2
   m_RequiresOpaqueTextureOption: 2
   m_CameraType: 0
@@ -516,6 +516,7 @@ GameObject:
   - component: {fileID: 783983873}
   - component: {fileID: 783983874}
   - component: {fileID: 783983875}
+  - component: {fileID: 783983876}
   m_Layer: 8
   m_Name: NOISE
   m_TagString: Untagged
@@ -583,6 +584,19 @@ MonoBehaviour:
   _WaveRenderer: {fileID: 7200000, guid: e87f69e58df85ef46a78ec73b49d920e, type: 3}
   _UI: {fileID: 181933994}
   _TextHolder: {fileID: 971379355}
+--- !u!114 &783983876
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 783983872}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccd0520397fd2294f90f51afe7e4b226, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _MainCamera: {fileID: 421258172}
 --- !u!1 &915763647
 GameObject:
   m_ObjectHideFlags: 0
@@ -670,9 +684,9 @@ Canvas:
   m_GameObject: {fileID: 915763647}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 0
-  m_Camera: {fileID: 0}
-  m_PlaneDistance: 100
+  m_RenderMode: 1
+  m_Camera: {fileID: 421258172}
+  m_PlaneDistance: 5
   m_PixelPerfect: 0
   m_ReceivesEvents: 1
   m_OverrideSorting: 0

@@ -38,8 +38,8 @@ public class WaveController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        _MainInput.WaveController.BeatMultiplier.started += ScrollListener;
-        _MainInput.WaveController.BandSelector.started += ArrowListener;
+        _MainInput.WaveController.BeatMultiplier.performed += ScrollListener;
+        _MainInput.WaveController.BandSelector.performed += ArrowListener;
         _MainInput.WaveController.ShowHideUi.performed += DebugUI;
     }
 

@@ -28,6 +28,14 @@
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": ""
+                },
+                {
+                    "name": "TakeScreenShot",
+                    "type": "Button",
+                    "id": "1eeeb2b4-4f52-4bbc-96b2-81219f0183bf",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
                 }
             ],
             "bindings": [
@@ -83,6 +91,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "ShowHideUi",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "99bd4d80-a40d-427e-9de0-e94d7de872cd",
+                    "path": "<Keyboard>/f2",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "TakeScreenShot",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

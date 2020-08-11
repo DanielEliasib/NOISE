@@ -43,6 +43,14 @@ namespace AL.NOISE.InputSystem
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """"
+                },
+                {
+                    ""name"": ""TakeScreenShot"",
+                    ""type"": ""Button"",
+                    ""id"": ""1eeeb2b4-4f52-4bbc-96b2-81219f0183bf"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
                 }
             ],
             ""bindings"": [
@@ -100,6 +108,17 @@ namespace AL.NOISE.InputSystem
                     ""action"": ""ShowHideUi"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""99bd4d80-a40d-427e-9de0-e94d7de872cd"",
+                    ""path"": ""<Keyboard>/f2"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""TakeScreenShot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -111,6 +130,7 @@ namespace AL.NOISE.InputSystem
             m_WaveController_BeatMultiplier = m_WaveController.FindAction("BeatMultiplier", throwIfNotFound: true);
             m_WaveController_BandSelector = m_WaveController.FindAction("BandSelector", throwIfNotFound: true);
             m_WaveController_ShowHideUi = m_WaveController.FindAction("ShowHideUi", throwIfNotFound: true);
+            m_WaveController_TakeScreenShot = m_WaveController.FindAction("TakeScreenShot", throwIfNotFound: true);
         }
 
         public void Dispose()
@@ -163,6 +183,7 @@ namespace AL.NOISE.InputSystem
         private readonly InputAction m_WaveController_BeatMultiplier;
         private readonly InputAction m_WaveController_BandSelector;
         private readonly InputAction m_WaveController_ShowHideUi;
+        private readonly InputAction m_WaveController_TakeScreenShot;
         public struct WaveControllerActions
         {
             private @WaveInput m_Wrapper;
@@ -170,6 +191,7 @@ namespace AL.NOISE.InputSystem
             public InputAction @BeatMultiplier => m_Wrapper.m_WaveController_BeatMultiplier;
             public InputAction @BandSelector => m_Wrapper.m_WaveController_BandSelector;
             public InputAction @ShowHideUi => m_Wrapper.m_WaveController_ShowHideUi;
+            public InputAction @TakeScreenShot => m_Wrapper.m_WaveController_TakeScreenShot;
             public InputActionMap Get() { return m_Wrapper.m_WaveController; }
             public void Enable() { Get().Enable(); }
             public void Disable() { Get().Disable(); }
@@ -188,6 +210,9 @@ namespace AL.NOISE.InputSystem
                     @ShowHideUi.started -= m_Wrapper.m_WaveControllerActionsCallbackInterface.OnShowHideUi;
                     @ShowHideUi.performed -= m_Wrapper.m_WaveControllerActionsCallbackInterface.OnShowHideUi;
                     @ShowHideUi.canceled -= m_Wrapper.m_WaveControllerActionsCallbackInterface.OnShowHideUi;
+                    @TakeScreenShot.started -= m_Wrapper.m_WaveControllerActionsCallbackInterface.OnTakeScreenShot;
+                    @TakeScreenShot.performed -= m_Wrapper.m_WaveControllerActionsCallbackInterface.OnTakeScreenShot;
+                    @TakeScreenShot.canceled -= m_Wrapper.m_WaveControllerActionsCallbackInterface.OnTakeScreenShot;
                 }
                 m_Wrapper.m_WaveControllerActionsCallbackInterface = instance;
                 if (instance != null)
@@ -201,6 +226,9 @@ namespace AL.NOISE.InputSystem
                     @ShowHideUi.started += instance.OnShowHideUi;
                     @ShowHideUi.performed += instance.OnShowHideUi;
                     @ShowHideUi.canceled += instance.OnShowHideUi;
+                    @TakeScreenShot.started += instance.OnTakeScreenShot;
+                    @TakeScreenShot.performed += instance.OnTakeScreenShot;
+                    @TakeScreenShot.canceled += instance.OnTakeScreenShot;
                 }
             }
         }
@@ -210,6 +238,7 @@ namespace AL.NOISE.InputSystem
             void OnBeatMultiplier(InputAction.CallbackContext context);
             void OnBandSelector(InputAction.CallbackContext context);
             void OnShowHideUi(InputAction.CallbackContext context);
+            void OnTakeScreenShot(InputAction.CallbackContext context);
         }
     }
 }
