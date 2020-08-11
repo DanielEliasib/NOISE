@@ -82,6 +82,8 @@ public class LayerManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Application.targetFrameRate = -1;
+
         _LevelsPriv = _Levels;
 
         // All the layers un GPU memmory
@@ -196,6 +198,7 @@ public class LayerManager : MonoBehaviour
         _Compute.SetFloat("_Time", Time.time);
 
         _Compute.Dispatch(_KernelIndex, width / 8, height / 8, 1);
+        
 
         for(int i = 0; i < _LevelsPriv; i++)
             Graphics.Blit(_Layers, _Aux[i], i, 0);
@@ -229,36 +232,26 @@ public class LayerManager : MonoBehaviour
 
         _WaveDataBuffer = new ComputeBuffer(1, sizeof(float) * 4);
         _AFDataBuffer = new ComputeBuffer(1, sizeof(float) * 4);
+
+        _Compute.SetBuffer(_KernelIndex, "_WaveData", _WaveDataBuffer);
+        _Compute.SetBuffer(_KernelIndex, "_AFData", _AFDataBuffer);
     }
 
     void WaveBufferManager(int numberOfWaves)
     {
-        try
-        {
-            _WaveDataBuffer.Dispose();
-            _AFDataBuffer.Dispose();
-        }
-        catch { }
-
         if(numberOfWaves > 0)
         {
-            _WaveDataBuffer = new ComputeBuffer(numberOfWaves, sizeof(float) * 4);
-            _AFDataBuffer = new ComputeBuffer(numberOfWaves, sizeof(float) * 4);
+            if(_WaveData.Count > _WaveDataBuffer.count)
+            {
+                _WaveDataBuffer = new ComputeBuffer(numberOfWaves, sizeof(float) * 4);
+                _AFDataBuffer = new ComputeBuffer(numberOfWaves, sizeof(float) * 4);
 
-            _Compute.SetBuffer(_KernelIndex, "_WaveData", _WaveDataBuffer);
-            _Compute.SetBuffer(_KernelIndex, "_AFData", _AFDataBuffer);
+                _Compute.SetBuffer(_KernelIndex, "_WaveData", _WaveDataBuffer);
+                _Compute.SetBuffer(_KernelIndex, "_AFData", _AFDataBuffer);
+            }
 
             _WaveDataBuffer.SetData(_WaveData);
             _AFDataBuffer.SetData(_AFData);
-        }
-        else
-        {
-            _WaveDataBuffer = new ComputeBuffer(1, sizeof(float) * 4);
-            _AFDataBuffer = new ComputeBuffer(1, sizeof(float) * 4);
-
-            _Compute.SetBuffer(_KernelIndex, "_WaveData", _WaveDataBuffer);
-            _Compute.SetBuffer(_KernelIndex, "_AFData", _AFDataBuffer);
-
         }
 
         _Compute.SetInt("numberOfWaves", numberOfWaves);
