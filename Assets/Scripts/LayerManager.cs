@@ -40,7 +40,7 @@ public class LayerManager : MonoBehaviour
     private RenderTexture _Layers;
     private RenderTexture[] _Aux;
 
-    private int width = 512, height = 512;
+    private int width = 256, height = 256;
 
     private List<float4> _WaveData;
     private List<float4> _WaveDataBack;
@@ -185,6 +185,9 @@ public class LayerManager : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
+        for (int i = 0; i < _LevelsPriv; i++)
+            Graphics.Blit(_Layers, _Aux[i], i, 0);
+
         _SizeListener.Update();
 
         _Offset1.y = Time.time * _TimeScale.x;
@@ -198,10 +201,6 @@ public class LayerManager : MonoBehaviour
         _Compute.SetFloat("_Time", Time.time);
 
         _Compute.Dispatch(_KernelIndex, width / 8, height / 8, 1);
-        
-
-        for(int i = 0; i < _LevelsPriv; i++)
-            Graphics.Blit(_Layers, _Aux[i], i, 0);
 
         if (_CooldownActive)
             _Cooldown -= Time.deltaTime;
@@ -243,6 +242,9 @@ public class LayerManager : MonoBehaviour
         {
             if(_WaveData.Count > _WaveDataBuffer.count)
             {
+                _WaveDataBuffer.Dispose();
+                _AFDataBuffer.Dispose();
+
                 _WaveDataBuffer = new ComputeBuffer(numberOfWaves, sizeof(float) * 4);
                 _AFDataBuffer = new ComputeBuffer(numberOfWaves, sizeof(float) * 4);
 
@@ -355,10 +357,10 @@ public class LayerManager : MonoBehaviour
                     switch (i)
                     {
                         case 0:
-                            CreateWave(5.0f, 0.03f, 0.25f, 2);
+                            CreateWave(5.0f*2, 0.03f*2, 0.25f, 2*2);
                             break;
                         case 1:
-                            CreateWave(7.5f, 0.03f, 0.20f, 5);
+                            //CreateWave(7.5f, 0.03f, 0.20f, 5);
                             break;
                         default:
                             break;

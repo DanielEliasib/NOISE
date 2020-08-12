@@ -57,13 +57,14 @@ void NoiseGenerator(uint3 id : SV_DispatchThreadID)
 {
     float step = (1.0f) / (levels);
     
-    uint3 wavePoint = id - int3(512 / 2, 512 / 2, 0);
+    uint3 wavePoint = id - int3(256 / 2, 256 / 2, 0);
+
     float wRad = sqrt(wavePoint.x * wavePoint.x + wavePoint.y * wavePoint.y);
     
     float noise =
         dot(
-            snoise_grad((id + float3(0, _Offset1)) / _Frecuency1).xyz,
-            snoise_grad((id + float3(_Offset2, 0)) / _Frecuency2).xyz
+            snoise_grad((id*3 + float3(0, _Offset1)) / _Frecuency1).xyz,
+            snoise_grad((id*3 + float3(_Offset2, 0)) / _Frecuency2).xyz
             );
     //float noise = 0;
     
