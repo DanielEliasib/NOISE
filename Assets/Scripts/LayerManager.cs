@@ -12,7 +12,7 @@ using System.Linq;
 
 public class LayerManager : MonoBehaviour
 {
-    [SerializeField, Range(1, 200)] private float _Frecuency1, _Frecuency2;
+    [SerializeField, Range(1, 1000)] private float _Frecuency1, _Frecuency2;
     
     [SerializeField] private float2 _TimeScale;
     [SerializeField, Range(1, 20)] private int _Levels = 5;
@@ -23,13 +23,17 @@ public class LayerManager : MonoBehaviour
     [SerializeField] private RawImage _TargetImagePrefab;
 
     // Compute Variables
-    [SerializeField] private ComputeShader _Compute;
+    [SerializeField] private ComputeShader _LayerCompute;
+    [SerializeField] private ComputeShader _NoiseCompute;
+
     ComputeBuffer _ColorBuffer;
     ComputeBuffer _WaveDataBuffer;
     ComputeBuffer _AFDataBuffer;
-     
-    private int _KernelIndex;
-    private string _KernelName = "NoiseGenerator";
+    ComputeBuffer _NoiseDataBuffer;
+    ComputeBuffer _AmpDataBuffer;
+
+    private int _NoiseKernelIndex, _LayerKernelIndex;
+    private string _NoiseKernelName = "NoiseLayerGenerator", _LayerKernelName = "LayerSeparation";
 
     private float2 _Offset1, _Offset2;
     private int _LevelsPriv;
@@ -46,6 +50,8 @@ public class LayerManager : MonoBehaviour
     private List<float4> _WaveDataBack;
     private List<float4> _AFData;
     private List<float4> _AFDataBack;
+    private List<float> _AmpData;
+    private List<float> _AmpDataBack;
 
     [SerializeField] private int _SpectrumRes = 250;
 
@@ -63,12 +69,14 @@ public class LayerManager : MonoBehaviour
     private ScreenSizeListener _SizeListener;
     private List<RawImage> _LayerContainer;
 
+    private float _TextureRadius;
 
     //Public Info
     [SerializeField] public float[] _BeatMultipliers;
     [SerializeField] public float[] _LongProms;
     [SerializeField] public float[][] _Spectrum;
 
+    #region Unity Callbacks
     void Awake()
     {
         _SizeListener = new ScreenSizeListener();
@@ -77,6 +85,8 @@ public class LayerManager : MonoBehaviour
         _LayerContainer = new List<RawImage>();
 
         _CooldownActive = false;
+
+        _TextureRadius = Mathf.Sqrt(width*width + height*height)*1.5f;
     }
 
     // Start is called before the first frame update
@@ -88,7 +98,7 @@ public class LayerManager : MonoBehaviour
 
         // All the layers un GPU memmory
         _Layers = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
-
+        _Layers.filterMode = FilterMode.Point;
         _Layers.dimension = UnityEngine.Rendering.TextureDimension.Tex2DArray;
         _Layers.enableRandomWrite = true;
         _Layers.volumeDepth = _LevelsPriv;
@@ -101,9 +111,9 @@ public class LayerManager : MonoBehaviour
         for(int i = 0; i < _Aux.Length; i++)
         {
             _Aux[i] = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
-            _Aux[i].filterMode = FilterMode.Bilinear;
+            _Aux[i].filterMode = FilterMode.Point;
             
-            _Aux[i].enableRandomWrite = true;
+            //_Aux[i].enableRandomWrite = true;
             _Aux[i].Create();
         }
 
@@ -128,8 +138,11 @@ public class LayerManager : MonoBehaviour
 
         _WaveData = new List<float4>();
         _AFData = new List<float4>();
+        _AmpData = new List<float>();
+
         _WaveDataBack = new List<float4>();
         _AFDataBack = new List<float4>();
+        _AmpDataBack = new List<float>();
         //_TargetImage.texture = _Layers;
 
         //Loopback objects
@@ -185,22 +198,26 @@ public class LayerManager : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
+        //Blit last frame data in order to let the compute shader work for at least one frame.
         for (int i = 0; i < _LevelsPriv; i++)
             Graphics.Blit(_Layers, _Aux[i], i, 0);
+
+        
 
         _SizeListener.Update();
 
         _Offset1.y = Time.time * _TimeScale.x;
         _Offset2.x = Time.time * _TimeScale.y;
 
-        ProcessWaves();
+        ProcessWaveData();
         WaveBufferManager(_WaveData.Count);
 
         SetNoiseParameters(_Frecuency1, _Frecuency2, _Offset1, _Offset2);
 
-        _Compute.SetFloat("_Time", Time.time);
+        DispatchNoiseShaders();
 
-        _Compute.Dispatch(_KernelIndex, width / 8, height / 8, 1);
+        _LayerCompute.SetFloat("_Time", Time.time);
+        _LayerCompute.Dispatch(_NoiseKernelIndex, width / 8, height / 8, _Levels%4==0?_Levels/4 : _Levels / 4 + 1);
 
         if (_CooldownActive)
             _Cooldown -= Time.deltaTime;
@@ -211,13 +228,39 @@ public class LayerManager : MonoBehaviour
             _CooldownActive = false;
     }
 
+    private void OnDestroy()
+    {
+        _Loopback.StopListening();
+
+        try
+        {
+            _AFDataBuffer.Dispose();
+            _WaveDataBuffer.Dispose();
+            _ColorBuffer.Dispose();
+            _NoiseDataBuffer.Dispose();
+            _AmpDataBuffer.Dispose();
+        }
+        catch { }
+
+    }
+
+    #endregion
+
+    #region Compute Functions
+
     void InitCompute()
     {
-        _KernelIndex = _Compute.FindKernel(_KernelName);
-        _Compute.SetTexture(_KernelIndex, "_TexArray", _Layers);
-        _Compute.SetInt("levels", _LevelsPriv);
+        _LayerKernelIndex = _LayerCompute.FindKernel(_LayerKernelName);
+        _NoiseKernelIndex = _NoiseCompute.FindKernel(_NoiseKernelName);
 
-        _ColorBuffer = new ComputeBuffer(_Colors.Length,3*sizeof(float));
+        _LayerCompute.SetTexture(_LayerKernelIndex, "Layers", _Layers);
+        _LayerCompute.SetInt("levels", _LevelsPriv);
+
+        _LayerCompute.SetInt("_TexWidth", width);
+        _LayerCompute.SetInt("_TexHeight", height);
+
+        //! Colors
+        _ColorBuffer = new ComputeBuffer(_Colors.Length, 3 * sizeof(float));
 
         _ColorBackUp = new float3[_Colors.Length];
 
@@ -225,77 +268,103 @@ public class LayerManager : MonoBehaviour
             _ColorBackUp[i] = new float3(_Colors[i].r, _Colors[i].g, _Colors[i].b);
 
         _ColorBuffer.SetData(_ColorBackUp);
-
-        _Compute.SetBuffer(_KernelIndex, "_Colors", _ColorBuffer);
-        _Compute.SetInt("numberOfColors", _Colors.Length);
+        _LayerCompute.SetBuffer(_LayerKernelIndex, "_Colors", _ColorBuffer);
+        _LayerCompute.SetInt("numberOfColors", _Colors.Length);
 
         _WaveDataBuffer = new ComputeBuffer(1, sizeof(float) * 4);
         _AFDataBuffer = new ComputeBuffer(1, sizeof(float) * 4);
+        _NoiseDataBuffer = new ComputeBuffer(width * height, sizeof(float));
+        _AmpDataBuffer = new ComputeBuffer(1, sizeof(float));
 
-        _Compute.SetBuffer(_KernelIndex, "_WaveData", _WaveDataBuffer);
-        _Compute.SetBuffer(_KernelIndex, "_AFData", _AFDataBuffer);
+        _LayerCompute.SetBuffer(_LayerKernelIndex, "_WaveData", _WaveDataBuffer);
+        _LayerCompute.SetBuffer(_LayerKernelIndex, "_AFData", _AFDataBuffer);
+        _LayerCompute.SetBuffer(_LayerKernelIndex, "_NoiseLayer", _NoiseDataBuffer);
+        _LayerCompute.SetBuffer(_LayerKernelIndex, "_Amplituds", _AmpDataBuffer);
+
+        //! Noise
+        _NoiseCompute.SetBuffer(_NoiseKernelIndex, "_NoiseLayer", _NoiseDataBuffer);
+        _NoiseCompute.SetInt("_TexWidth", width);
     }
 
     void WaveBufferManager(int numberOfWaves)
     {
-        if(numberOfWaves > 0)
+        if (numberOfWaves > 0)
         {
-            if(_WaveData.Count > _WaveDataBuffer.count)
+            if (_WaveData.Count > _WaveDataBuffer.count)
             {
                 _WaveDataBuffer.Dispose();
                 _AFDataBuffer.Dispose();
+                _AmpDataBuffer.Dispose();
 
                 _WaveDataBuffer = new ComputeBuffer(numberOfWaves, sizeof(float) * 4);
                 _AFDataBuffer = new ComputeBuffer(numberOfWaves, sizeof(float) * 4);
+                _AmpDataBuffer = new ComputeBuffer(numberOfWaves, sizeof(float));
 
-                _Compute.SetBuffer(_KernelIndex, "_WaveData", _WaveDataBuffer);
-                _Compute.SetBuffer(_KernelIndex, "_AFData", _AFDataBuffer);
+                _LayerCompute.SetBuffer(_LayerKernelIndex, "_WaveData", _WaveDataBuffer);
+                _LayerCompute.SetBuffer(_LayerKernelIndex, "_AFData", _AFDataBuffer);
+                _LayerCompute.SetBuffer(_LayerKernelIndex, "_Amplituds", _AmpDataBuffer);
             }
 
             _WaveDataBuffer.SetData(_WaveData);
             _AFDataBuffer.SetData(_AFData);
+            _AmpDataBuffer.SetData(_AmpData);
         }
 
-        _Compute.SetInt("numberOfWaves", numberOfWaves);
+        _LayerCompute.SetInt("numberOfWaves", numberOfWaves);
     }
 
 
-    void SetNoiseParameters(float frecuency1, float frecuency2, float2 offset1, float2 offset2) 
+    void SetNoiseParameters(float frecuency1, float frecuency2, float2 offset1, float2 offset2)
     {
-        _Compute.SetFloat("_Frecuency1", frecuency1);
-        _Compute.SetFloat("_Frecuency2", frecuency2);
+        _NoiseCompute.SetFloat("_Freq1", frecuency1);
+        _NoiseCompute.SetFloat("_Freq2", frecuency2);
 
-        _Compute.SetFloats("_Offset1", new float[] { offset1.x, offset1.y });
-        _Compute.SetFloats("_Offset2", new float[] { offset2.x, offset2.y });
+        _NoiseCompute.SetFloats("_Offset1", new float[] { offset1.x, offset1.y });
+        _NoiseCompute.SetFloats("_Offset2", new float[] { offset2.x, offset2.y });
     }
 
+    void DispatchNoiseShaders()
+    {
+        SetNoiseParameters(_Frecuency1, _Frecuency2, _Offset1, _Offset2);
+        _NoiseCompute.Dispatch(_NoiseKernelIndex, width / 8, height / 8, 1);
+    }
+
+    #endregion
+
+    #region Wave Processing
     void CreateWave(float w, float k, float amp, float decay)
     {
         _WaveData.Add(new float4(w / k, 2 * Mathf.PI / k, k, w));
         _AFData.Add(new float4(amp, decay, w / (2 * Mathf.PI), Time.time));
+        _AmpDataBack.Add(amp);
         _CooldownActive = true;
     }
 
-    void ProcessWaves()
+    void ProcessWaveData()
     {
         _AFDataBack.Clear();
         _WaveDataBack.Clear();
+        _AmpDataBack.Clear();
 
         for(int i = 0; i < _WaveData.Count; i++)
         {
             //Check if the wave already leaved the screen, if so it removes it from the data
-            if(!(_WaveData[i].x*(Time.time - _AFData[i].w) + _WaveData[i].y > Mathf.Sqrt(width*width + height * height)))
+            if(!(_WaveData[i].x*(Time.time - _AFData[i].w) + _WaveData[i].y > _TextureRadius))
             {
                 _WaveDataBack.Add(_WaveData[i]);
                 _AFDataBack.Add(_AFData[i]);
+                // Pre calculate amplituds
+                _AmpDataBack.Add(_AFData[i].x/Mathf.Exp(_AFData[i].y * (Time.time - _AFData[i].w)));
             }
-
         }
 
         _WaveData = new List<float4>(_WaveDataBack);
         _AFData = new List<float4>(_AFDataBack);
+        _AmpData = new List<float>(_AmpDataBack);
     }
+    #endregion
 
+    #region Audio Analysis
     private void ProcessAudio()
     {
         _Spectrum = _Loopback.SpectrumData;
@@ -357,7 +426,7 @@ public class LayerManager : MonoBehaviour
                     switch (i)
                     {
                         case 0:
-                            CreateWave(5.0f*2, 0.03f*2, 0.25f, 2*2);
+                            CreateWave(5.0f, 0.03f, 0.25f, 2);
                             break;
                         case 1:
                             //CreateWave(7.5f, 0.03f, 0.20f, 5);
@@ -380,18 +449,6 @@ public class LayerManager : MonoBehaviour
 
             
     }
+    #endregion
 
-    private void OnDestroy()
-    {
-        _Loopback.StopListening();
-
-        try
-        {
-            _AFDataBuffer.Dispose();
-            _WaveDataBuffer.Dispose();
-            _ColorBuffer.Dispose();
-        }
-        catch { }
-        
-    }
 }

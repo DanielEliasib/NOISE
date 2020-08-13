@@ -1,0 +1,21 @@
+﻿#pragma kernel NoiseLayerGenerator
+
+RWStructuredBuffer<float> _NoiseLayer;
+int _TexWidth;
+float _Freq1, _Freq2;
+float2 _Offset1, _Offset2;
+
+#include "../kj/SimplexNoise3D.hlsl"
+
+[numthreads(8,8,1)]
+void NoiseLayerGenerator(uint3 id : SV_DispatchThreadID)
+{
+	float noise =
+		dot(
+			snoise_grad((id * 3 + float3(0, _Offset1)) / _Freq1).xyz,
+			snoise_grad((id * 3 + float3(_Offset2, 0)) / _Freq2).xyz
+		);
+	
+    _NoiseLayer[id.y * _TexWidth + id.x] = (noise / 20.0f + 0.6f)*0.5f;
+
+}

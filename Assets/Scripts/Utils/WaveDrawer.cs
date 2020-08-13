@@ -30,6 +30,8 @@ public class WaveDrawer
 
         _Target.texture = _Tex;
 
+        _KernelIndex = _Shader.FindKernel(_KernelName);
+
         _Shader.SetTexture(_KernelIndex, "Result", _Tex);
         _Shader.SetFloat("_Width", _Width);
         _Shader.SetFloat("_Height", _Height);

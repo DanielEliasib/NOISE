@@ -563,7 +563,8 @@ MonoBehaviour:
   - {r: 0.5934051, g: 0.97165346, b: 0.990566, a: 1}
   _UIHolder: {fileID: 915763647}
   _TargetImagePrefab: {fileID: 8736642149949679981, guid: 7ff82b9055b9e38488843edf638e238d, type: 3}
-  _Compute: {fileID: 7200000, guid: d90e4d9adeeae6d4dba4f189cf5ccf2a, type: 3}
+  _LayerCompute: {fileID: 7200000, guid: 85872858f2d5ea84ca111da1e4cbb42b, type: 3}
+  _NoiseCompute: {fileID: 7200000, guid: 8016fee858b59354d89138be1cd9f0ea, type: 3}
   _SpectrumRes: 250
   _BeatMultipliers: []
   _LongProms: []
