@@ -217,7 +217,7 @@ public class LayerManager : MonoBehaviour
         DispatchNoiseShaders();
 
         _LayerCompute.SetFloat("_Time", Time.time);
-        _LayerCompute.Dispatch(_NoiseKernelIndex, width / 8, height / 8, _Levels%4==0?_Levels/4 : _Levels / 4 + 1);
+        _LayerCompute.Dispatch(_NoiseKernelIndex, (width/2) / 8, (height/2) / 8, _Levels%4==0?_Levels/4 : _Levels / 4 + 1);
 
         if (_CooldownActive)
             _Cooldown -= Time.deltaTime;
