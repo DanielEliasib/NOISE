@@ -202,7 +202,6 @@ public class LayerManager : MonoBehaviour
         for (int i = 0; i < _LevelsPriv; i++)
             Graphics.Blit(_Layers, _Aux[i], i, 0);
 
-        
 
         _SizeListener.Update();
 
@@ -215,8 +214,7 @@ public class LayerManager : MonoBehaviour
         SetNoiseParameters(_Frecuency1, _Frecuency2, _Offset1, _Offset2);
 
         DispatchNoiseShaders();
-
-        _LayerCompute.SetFloat("_Time", Time.time);
+        
         _LayerCompute.Dispatch(_NoiseKernelIndex, (width/2) / 8, (height/2) / 8, _Levels%4==0?_Levels/4 : _Levels / 4 + 1);
 
         if (_CooldownActive)
@@ -259,6 +257,9 @@ public class LayerManager : MonoBehaviour
         _LayerCompute.SetInt("_TexWidth", width);
         _LayerCompute.SetInt("_TexHeight", height);
 
+        _NoiseCompute.SetInt("_TexWidth", width);
+        _NoiseCompute.SetInt("_TexHeight", height);
+
         //! Colors
         _ColorBuffer = new ComputeBuffer(_Colors.Length, 3 * sizeof(float));
 
@@ -276,12 +277,12 @@ public class LayerManager : MonoBehaviour
         _NoiseDataBuffer = new ComputeBuffer(width * height, sizeof(float));
         _AmpDataBuffer = new ComputeBuffer(1, sizeof(float));
 
-        _LayerCompute.SetBuffer(_LayerKernelIndex, "_WaveData", _WaveDataBuffer);
-        _LayerCompute.SetBuffer(_LayerKernelIndex, "_AFData", _AFDataBuffer);
         _LayerCompute.SetBuffer(_LayerKernelIndex, "_NoiseLayer", _NoiseDataBuffer);
-        _LayerCompute.SetBuffer(_LayerKernelIndex, "_Amplituds", _AmpDataBuffer);
 
         //! Noise
+        _NoiseCompute.SetBuffer(_NoiseKernelIndex, "_WaveData", _WaveDataBuffer);
+        _NoiseCompute.SetBuffer(_NoiseKernelIndex, "_AFData", _AFDataBuffer);
+        _NoiseCompute.SetBuffer(_NoiseKernelIndex, "_Amplituds", _AmpDataBuffer);
         _NoiseCompute.SetBuffer(_NoiseKernelIndex, "_NoiseLayer", _NoiseDataBuffer);
         _NoiseCompute.SetInt("_TexWidth", width);
     }
@@ -300,9 +301,9 @@ public class LayerManager : MonoBehaviour
                 _AFDataBuffer = new ComputeBuffer(numberOfWaves, sizeof(float) * 4);
                 _AmpDataBuffer = new ComputeBuffer(numberOfWaves, sizeof(float));
 
-                _LayerCompute.SetBuffer(_LayerKernelIndex, "_WaveData", _WaveDataBuffer);
-                _LayerCompute.SetBuffer(_LayerKernelIndex, "_AFData", _AFDataBuffer);
-                _LayerCompute.SetBuffer(_LayerKernelIndex, "_Amplituds", _AmpDataBuffer);
+                _NoiseCompute.SetBuffer(_NoiseKernelIndex, "_WaveData", _WaveDataBuffer);
+                _NoiseCompute.SetBuffer(_NoiseKernelIndex, "_AFData", _AFDataBuffer);
+                _NoiseCompute.SetBuffer(_NoiseKernelIndex, "_Amplituds", _AmpDataBuffer);
             }
 
             _WaveDataBuffer.SetData(_WaveData);
@@ -310,12 +311,14 @@ public class LayerManager : MonoBehaviour
             _AmpDataBuffer.SetData(_AmpData);
         }
 
-        _LayerCompute.SetInt("numberOfWaves", numberOfWaves);
+        _NoiseCompute.SetInt("numberOfWaves", numberOfWaves);
     }
 
 
     void SetNoiseParameters(float frecuency1, float frecuency2, float2 offset1, float2 offset2)
     {
+        _NoiseCompute.SetFloat("_Time", Time.time);
+
         _NoiseCompute.SetFloat("_Freq1", frecuency1);
         _NoiseCompute.SetFloat("_Freq2", frecuency2);
 

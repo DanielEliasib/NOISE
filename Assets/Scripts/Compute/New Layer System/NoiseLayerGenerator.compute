@@ -1,21 +1,48 @@
 ﻿#pragma kernel NoiseLayerGenerator
+#include "../kj/SimplexNoise3D.hlsl"
 
 RWStructuredBuffer<float> _NoiseLayer;
-int _TexWidth;
-float _Freq1, _Freq2;
+
+//! Data
+StructuredBuffer<float4> _WaveData;		// x:vel, y:lambda, z:k, w:w
+StructuredBuffer<float4> _AFData;		// x:A, y:a, z:f, w:time shift
+StructuredBuffer<float> _Amplituds;
+
+uint _TexWidth, _TexHeight;
+int numberOfWaves;
+
 float2 _Offset1, _Offset2;
 
-#include "../kj/SimplexNoise3D.hlsl"
+float _Freq1, _Freq2;
+float _Time;
+
+float WaveProcessor(float t, float r)
+{
+    float wave = 0;
+    for (int i = 0; i < numberOfWaves; i++)
+    {
+        float _CurrentTime = t - _AFData[i].w;
+		
+        if (abs(_WaveData[i].x * _CurrentTime - r) <= _WaveData[i].y * 0.5f)
+        {
+            wave += _Amplituds[i] * (cos(_WaveData[i].z * r - _WaveData[i].w * _CurrentTime) + 1.0f);
+        }
+    }
+    
+    return clamp(wave, 0, 1);
+}
 
 [numthreads(8,8,1)]
 void NoiseLayerGenerator(uint3 id : SV_DispatchThreadID)
 {
+    uint3 wavePoint = id - int3(_TexWidth / 2, _TexHeight / 2, 0);
+    float wRad = sqrt(wavePoint.x * wavePoint.x + wavePoint.y * wavePoint.y);
+    
 	float noise =
 		dot(
 			snoise_grad((id * 3 + float3(0, _Offset1)) / _Freq1).xyz,
 			snoise_grad((id * 3 + float3(_Offset2, 0)) / _Freq2).xyz
 		);
 	
-    _NoiseLayer[id.y * _TexWidth + id.x] = (noise / 20.0f + 0.6f)*0.5f;
-
+    _NoiseLayer[id.y * _TexWidth + id.x] = (noise / 20.0f + 0.6f) * 0.5f + WaveProcessor(_Time, wRad);
 }

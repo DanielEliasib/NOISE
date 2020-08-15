@@ -1,75 +1,32 @@
 ﻿#pragma kernel LayerSeparation
 
 //! Data
-StructuredBuffer<float4> _WaveData;		// x:vel, y:lambda, z:k, w:w
-StructuredBuffer<float4> _AFData;		// x:A, y:a, z:f, w:time shift
-StructuredBuffer<float> _Amplituds;
-
 StructuredBuffer<float3> _Colors;
 StructuredBuffer<float> _NoiseLayer;
 
 RWTexture2DArray<float4> Layers;
 
 int numberOfColors;
-int numberOfWaves;
 uint levels;
 uint _TexWidth, _TexHeight;
-
-float _Time;
-
-float A(float t, float amp, float par)
-{
-    return amp / exp(par * t);
-}
-
-float WaveProcessor(float t, float r)
-{
-	float wave = 0;
-	for (int i = 0; i < numberOfWaves; i++)
-	{
-		float _CurrentTime = t - _AFData[i].w;
-        
-        //float temp = A(_CurrentTime,
-		      //          _AFData[i].x,
-		      //          _AFData[i].y);
-        
-		float temp = _Amplituds[i];
-		
-        temp = temp * (cos(_WaveData[i].z * r - _WaveData[i].w * _CurrentTime) + 1.0f);
-        
-		temp = temp * (abs(_WaveData[i].x * _CurrentTime - r) <= _WaveData[i].y * 0.5f);
-        
-		wave += temp;
-	}
-    
-	return clamp(wave, 0, 1);
-}
 
 [numthreads(8,8,4)]
 void LayerSeparation(uint3 id : SV_DispatchThreadID)
 {
 	if (id.z < levels)
 	{
-		uint3 wavePoint = id - int3(_TexWidth / 2, _TexHeight / 2, 0);
-		float step = (1.0f) / (levels);
-		float wRad = sqrt(wavePoint.x * wavePoint.x + wavePoint.y * wavePoint.y);
-		float val = WaveProcessor(_Time, wRad);
-		
+        float step = (1.0f) / (levels);
+        int currentColor = (int) (id.z * step * (numberOfColors - 1));
+        float3 color = lerp(_Colors[currentColor], _Colors[currentColor + 1], id.z * step * numberOfColors - currentColor);
         uint3 id2, id3, id4;
-		
+
         id2 = uint3(_TexWidth-1 - id.x, id.y, id.z);
         id3 = uint3(id.x, _TexHeight-1 - id.y, id.z);
         id4 = uint3(_TexWidth-1 - id.x, _TexHeight-1 - id.y, id.z);
-		
-        //float n1 = _NoiseLayer[id.y * _TexWidth + id.x];
-        
-		int currentColor = (int) (id.z * step * (numberOfColors - 1));
-		float3 color = lerp(_Colors[currentColor], _Colors[currentColor + 1], id.z * step * numberOfColors - currentColor);
-	
-        Layers[id] = float4(color, 1.0f * ((id.z + 1) * step <= val + _NoiseLayer[id.y * _TexWidth + id.x]));
-        Layers[id2] = float4(color, 1.0f * ((id.z + 1) * step <= val + _NoiseLayer[id2.y * _TexWidth + id2.x]));
-        Layers[id3] = float4(color, 1.0f * ((id.z + 1) * step <= val + _NoiseLayer[id3.y * _TexWidth + id3.x]));
-        Layers[id4] = float4(color, 1.0f * ((id.z + 1) * step <= val + _NoiseLayer[id4.y * _TexWidth + id4.x]));
+
+        Layers[id] = float4(color, 1.0f * ((id.z + 1) * step <= _NoiseLayer[id.y * _TexWidth + id.x]));
+        Layers[id2] = float4(color, 1.0f * ((id.z + 1) * step <= _NoiseLayer[id2.y * _TexWidth + id2.x]));
+        Layers[id3] = float4(color, 1.0f * ((id.z + 1) * step <= _NoiseLayer[id3.y * _TexWidth + id3.x]));
+        Layers[id4] = float4(color, 1.0f * ((id.z + 1) * step <= _NoiseLayer[id4.y * _TexWidth + id4.x]));
     }
-		
 }
