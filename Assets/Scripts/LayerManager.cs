@@ -98,7 +98,7 @@ public class LayerManager : MonoBehaviour
 
         // All the layers un GPU memmory
         _Layers = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
-        _Layers.filterMode = FilterMode.Point;
+        _Layers.filterMode = FilterMode.Bilinear;
         _Layers.dimension = UnityEngine.Rendering.TextureDimension.Tex2DArray;
         _Layers.enableRandomWrite = true;
         _Layers.volumeDepth = _LevelsPriv;
@@ -111,7 +111,7 @@ public class LayerManager : MonoBehaviour
         for(int i = 0; i < _Aux.Length; i++)
         {
             _Aux[i] = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
-            _Aux[i].filterMode = FilterMode.Point;
+            _Aux[i].filterMode = FilterMode.Bilinear;
             
             //_Aux[i].enableRandomWrite = true;
             _Aux[i].Create();
@@ -195,13 +195,31 @@ public class LayerManager : MonoBehaviour
 
     }
 
+    void OnGUI()
+    {
+        if (Event.current.type.Equals(EventType.Repaint))
+        {
+            // for (int i = 0; i < _LevelsPriv; i++)
+            // {
+            //     GL.PushMatrix();
+            //     GL.LoadProjectionMatrix(Camera.main.projectionMatrix);
+                
+            //     GL.modelview = Camera.main.worldToCameraMatrix * this.transform.localToWorldMatrix;
+            //     Graphics.DrawTexture(new Rect(0, 0, i, 1), _Aux[i]);
+            //     GL.PopMatrix();
+            // }
+            
+        }
+    }
+
     // Update is called once per frame
     void FixedUpdate()
     {
         //Blit last frame data in order to let the compute shader work for at least one frame.
-        for (int i = 0; i < _LevelsPriv; i++)
+        for(int i = 0 ; i < _LevelsPriv; i++)
+        {
             Graphics.Blit(_Layers, _Aux[i], i, 0);
-
+        }
 
         _SizeListener.Update();
 
@@ -224,6 +242,8 @@ public class LayerManager : MonoBehaviour
 
         if (_Cooldown <= 0)
             _CooldownActive = false;
+
+        Debug.Log("Number of waves: " + _WaveData.Count);
     }
 
     private void OnDestroy()
@@ -272,10 +292,10 @@ public class LayerManager : MonoBehaviour
         _LayerCompute.SetBuffer(_LayerKernelIndex, "_Colors", _ColorBuffer);
         _LayerCompute.SetInt("numberOfColors", _Colors.Length);
 
-        _WaveDataBuffer = new ComputeBuffer(1, sizeof(float) * 4);
-        _AFDataBuffer = new ComputeBuffer(1, sizeof(float) * 4);
+        _WaveDataBuffer = new ComputeBuffer(25, sizeof(float) * 4);
+        _AFDataBuffer = new ComputeBuffer(25, sizeof(float) * 4);
         _NoiseDataBuffer = new ComputeBuffer(width * height, sizeof(float));
-        _AmpDataBuffer = new ComputeBuffer(1, sizeof(float));
+        _AmpDataBuffer = new ComputeBuffer(25, sizeof(float));
 
         _LayerCompute.SetBuffer(_LayerKernelIndex, "_NoiseLayer", _NoiseDataBuffer);
 
@@ -304,6 +324,8 @@ public class LayerManager : MonoBehaviour
                 _NoiseCompute.SetBuffer(_NoiseKernelIndex, "_WaveData", _WaveDataBuffer);
                 _NoiseCompute.SetBuffer(_NoiseKernelIndex, "_AFData", _AFDataBuffer);
                 _NoiseCompute.SetBuffer(_NoiseKernelIndex, "_Amplituds", _AmpDataBuffer);
+
+                Debug.Log("Number of waves: " + numberOfWaves);
             }
 
             _WaveDataBuffer.SetData(_WaveData);
@@ -429,7 +451,7 @@ public class LayerManager : MonoBehaviour
                     switch (i)
                     {
                         case 0:
-                            CreateWave(5.0f, 0.03f, 0.25f, 2);
+                            CreateWave(7.5f, 0.05f, 0.25f, 3);
                             break;
                         case 1:
                             //CreateWave(7.5f, 0.03f, 0.20f, 5);

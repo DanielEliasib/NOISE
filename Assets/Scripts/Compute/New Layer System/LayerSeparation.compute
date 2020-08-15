@@ -17,7 +17,7 @@ void LayerSeparation(uint3 id : SV_DispatchThreadID)
 	{
         float step = (1.0f) / (levels);
         int currentColor = (int) (id.z * step * (numberOfColors - 1));
-        float3 color = lerp(_Colors[currentColor], _Colors[currentColor + 1], id.z * step * numberOfColors - currentColor);
+        float3 color = lerp(_Colors[currentColor] + 0.5, _Colors[currentColor + 1], id.z * step * numberOfColors - currentColor);   //Esta se puede ahorrar
         uint3 id2, id3, id4;
 
         id2 = uint3(_TexWidth-1 - id.x, id.y, id.z);
