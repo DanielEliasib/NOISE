@@ -77,21 +77,18 @@ public class LayerManager : MonoBehaviour
     [SerializeField] public float[][] _Spectrum;
 
     #region Unity Callbacks
-    void Awake()
+    // Start is called before the first frame update
+    void Start()
     {
         _SizeListener = new ScreenSizeListener();
-        _SizeListener.Awake();
+        _SizeListener.Awake(this);
 
         _LayerContainer = new List<RawImage>();
 
         _CooldownActive = false;
 
-        _TextureRadius = Mathf.Sqrt(width*width + height*height)*1.5f;
-    }
+        _TextureRadius = Mathf.Sqrt(width * width*0.25f + height * height*0.25f);
 
-    // Start is called before the first frame update
-    void Start()
-    {
         Application.targetFrameRate = -1;
 
         _LevelsPriv = _Levels;
@@ -374,7 +371,7 @@ public class LayerManager : MonoBehaviour
         for(int i = 0; i < _WaveData.Count; i++)
         {
             //Check if the wave already leaved the screen, if so it removes it from the data
-            if(!(_WaveData[i].x*(Time.time - _AFData[i].w) + _WaveData[i].y > _TextureRadius))
+            if(!(_WaveData[i].x*(Time.time - _AFData[i].w) - _WaveData[i].y*0.5f > _TextureRadius))
             {
                 _WaveDataBack.Add(_WaveData[i]);
                 _AFDataBack.Add(_AFData[i]);
@@ -451,10 +448,10 @@ public class LayerManager : MonoBehaviour
                     switch (i)
                     {
                         case 0:
-                            CreateWave(7.5f, 0.05f, 0.25f, 3);
+                            CreateWave(10f, 0.06f, 0.25f, 2.2f);
                             break;
                         case 1:
-                            //CreateWave(7.5f, 0.03f, 0.20f, 5);
+                            CreateWave(15f, 0.065f, 0.2f, 2.3f);
                             break;
                         default:
                             break;

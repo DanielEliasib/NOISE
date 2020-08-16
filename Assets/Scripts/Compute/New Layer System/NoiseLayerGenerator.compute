@@ -29,7 +29,7 @@ float WaveProcessor(float t, float r)
         }
     }
     
-    return clamp(wave, 0, 1);
+    return clamp(wave, 0, 0.5f);
 }
 
 [numthreads(8,8,1)]

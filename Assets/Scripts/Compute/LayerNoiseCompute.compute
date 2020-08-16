@@ -49,7 +49,7 @@ float WaveProcessor(float t, float r)
         wave += temp;
     }
     
-    return clamp(wave, 0, 1);
+    return clamp(wave, 0, 0.5f);
 }
 
 [numthreads(8, 8, 1)]
@@ -70,7 +70,7 @@ void NoiseGenerator(uint3 id : SV_DispatchThreadID)
     
     //Remap noise. I think dot(noise, noise) give us at most 1*1 + 1*1 + 1*1 = 3, and at least -1*1 -1*1 -1*1 = -3
     //So I remap [-3,3] to [0, 1]
-    noise = (noise / 15.0f + 0.5f) * 0.4f;
+    noise = (noise / 15.0f + 0.5f) * 0.6f;
     noise += WaveProcessor(_Time, wRad);
     
     for (int i = 0; i < levels; i++)
