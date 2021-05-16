@@ -22,6 +22,7 @@ public class ScreenSizeListener
         //_WaitEndOfFrame = new WaitForEndOfFrame();
         //mono.StartCoroutine(Resize());              //? Why do I resize every 30 seconds?
         //AdjustScale();
+        
     }
 
     public void Update()

@@ -18,6 +18,7 @@ public class LayerManager : MonoBehaviour
     [SerializeField, Range(1, 20)] private int _Levels = 5;
     
     [SerializeField] private Color[] _Colors;
+    [SerializeField] private ColorTemplate _Preset;
 
     [SerializeField] private GameObject _UIHolder;
     [SerializeField] private RawImage _TargetImagePrefab;
@@ -278,16 +279,16 @@ public class LayerManager : MonoBehaviour
         _NoiseCompute.SetInt("_TexHeight", height);
 
         //! Colors
-        _ColorBuffer = new ComputeBuffer(_Colors.Length, 3 * sizeof(float));
+        _ColorBuffer = new ComputeBuffer(_Preset._Colors.Length, 3 * sizeof(float));
 
-        _ColorBackUp = new float3[_Colors.Length];
+        _ColorBackUp = new float3[_Preset._Colors.Length];
 
         for (int i = 0; i < _ColorBackUp.Length; i++)
-            _ColorBackUp[i] = new float3(_Colors[i].r, _Colors[i].g, _Colors[i].b);
+            _ColorBackUp[i] = new float3(_Preset._Colors[i].r, _Preset._Colors[i].g, _Preset._Colors[i].b);
 
         _ColorBuffer.SetData(_ColorBackUp);
         _LayerCompute.SetBuffer(_LayerKernelIndex, "_Colors", _ColorBuffer);
-        _LayerCompute.SetInt("numberOfColors", _Colors.Length);
+        _LayerCompute.SetInt("numberOfColors", _Preset._Colors.Length);
 
         _WaveDataBuffer = new ComputeBuffer(25, sizeof(float) * 4);
         _AFDataBuffer = new ComputeBuffer(25, sizeof(float) * 4);

@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e107b563fe416043bb746f11f76f664, type: 3}
+  m_Name: Neon
+  m_EditorClassIdentifier: 
+  _Colors:
+  - {r: 0.94117653, g: 0.52156866, b: 0.9490197, a: 1}
+  - {r: 0.627451, g: 0.2901961, b: 0.85098046, a: 1}
+  - {r: 0.2784314, g: 0.15294118, b: 0.54901963, a: 1}
+  - {r: 0.17254902, g: 0.14509805, b: 0.34901962, a: 1}
+  - {r: 0.08627451, g: 0.9490197, b: 0.7058824, a: 1}
