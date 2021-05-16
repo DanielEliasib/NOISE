@@ -51,6 +51,14 @@ namespace AL.NOISE.InputSystem
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """"
+                },
+                {
+                    ""name"": ""ChangeColor"",
+                    ""type"": ""Button"",
+                    ""id"": ""c38f4a69-d3f4-4b52-b5ed-1e4f5403bf5f"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
                 }
             ],
             ""bindings"": [
@@ -119,6 +127,17 @@ namespace AL.NOISE.InputSystem
                     ""action"": ""TakeScreenShot"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""83f10919-5ae3-41fa-9d05-7a3171e5305f"",
+                    ""path"": ""<Keyboard>/space"",
+                    ""interactions"": ""Press"",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ChangeColor"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -131,6 +150,7 @@ namespace AL.NOISE.InputSystem
             m_WaveController_BandSelector = m_WaveController.FindAction("BandSelector", throwIfNotFound: true);
             m_WaveController_ShowHideUi = m_WaveController.FindAction("ShowHideUi", throwIfNotFound: true);
             m_WaveController_TakeScreenShot = m_WaveController.FindAction("TakeScreenShot", throwIfNotFound: true);
+            m_WaveController_ChangeColor = m_WaveController.FindAction("ChangeColor", throwIfNotFound: true);
         }
 
         public void Dispose()
@@ -184,6 +204,7 @@ namespace AL.NOISE.InputSystem
         private readonly InputAction m_WaveController_BandSelector;
         private readonly InputAction m_WaveController_ShowHideUi;
         private readonly InputAction m_WaveController_TakeScreenShot;
+        private readonly InputAction m_WaveController_ChangeColor;
         public struct WaveControllerActions
         {
             private @WaveInput m_Wrapper;
@@ -192,6 +213,7 @@ namespace AL.NOISE.InputSystem
             public InputAction @BandSelector => m_Wrapper.m_WaveController_BandSelector;
             public InputAction @ShowHideUi => m_Wrapper.m_WaveController_ShowHideUi;
             public InputAction @TakeScreenShot => m_Wrapper.m_WaveController_TakeScreenShot;
+            public InputAction @ChangeColor => m_Wrapper.m_WaveController_ChangeColor;
             public InputActionMap Get() { return m_Wrapper.m_WaveController; }
             public void Enable() { Get().Enable(); }
             public void Disable() { Get().Disable(); }
@@ -213,6 +235,9 @@ namespace AL.NOISE.InputSystem
                     @TakeScreenShot.started -= m_Wrapper.m_WaveControllerActionsCallbackInterface.OnTakeScreenShot;
                     @TakeScreenShot.performed -= m_Wrapper.m_WaveControllerActionsCallbackInterface.OnTakeScreenShot;
                     @TakeScreenShot.canceled -= m_Wrapper.m_WaveControllerActionsCallbackInterface.OnTakeScreenShot;
+                    @ChangeColor.started -= m_Wrapper.m_WaveControllerActionsCallbackInterface.OnChangeColor;
+                    @ChangeColor.performed -= m_Wrapper.m_WaveControllerActionsCallbackInterface.OnChangeColor;
+                    @ChangeColor.canceled -= m_Wrapper.m_WaveControllerActionsCallbackInterface.OnChangeColor;
                 }
                 m_Wrapper.m_WaveControllerActionsCallbackInterface = instance;
                 if (instance != null)
@@ -229,6 +254,9 @@ namespace AL.NOISE.InputSystem
                     @TakeScreenShot.started += instance.OnTakeScreenShot;
                     @TakeScreenShot.performed += instance.OnTakeScreenShot;
                     @TakeScreenShot.canceled += instance.OnTakeScreenShot;
+                    @ChangeColor.started += instance.OnChangeColor;
+                    @ChangeColor.performed += instance.OnChangeColor;
+                    @ChangeColor.canceled += instance.OnChangeColor;
                 }
             }
         }
@@ -239,6 +267,7 @@ namespace AL.NOISE.InputSystem
             void OnBandSelector(InputAction.CallbackContext context);
             void OnShowHideUi(InputAction.CallbackContext context);
             void OnTakeScreenShot(InputAction.CallbackContext context);
+            void OnChangeColor(InputAction.CallbackContext context);
         }
     }
 }

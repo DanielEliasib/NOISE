@@ -36,6 +36,14 @@
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": ""
+                },
+                {
+                    "name": "ChangeColor",
+                    "type": "Button",
+                    "id": "c38f4a69-d3f4-4b52-b5ed-1e4f5403bf5f",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
                 }
             ],
             "bindings": [
@@ -102,6 +110,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "TakeScreenShot",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "83f10919-5ae3-41fa-9d05-7a3171e5305f",
+                    "path": "<Keyboard>/space",
+                    "interactions": "Press",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ChangeColor",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

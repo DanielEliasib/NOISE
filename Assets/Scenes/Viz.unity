@@ -506,12 +506,13 @@ MonoBehaviour:
     x: 15
     y: 20
   _Levels: 15
-  _Colors:
-  - {r: 0.105882354, g: 0.16470589, b: 0.49019608, a: 1}
-  - {r: 0.17221434, g: 0.5984653, b: 0.8113208, a: 1}
-  - {r: 0.35686275, g: 0.82745105, b: 0.85098046, a: 1}
-  - {r: 0.5934051, g: 0.97165346, b: 0.990566, a: 1}
-  _Preset: {fileID: 11400000, guid: 4dee57aba265cb04db8627bcc99d77d5, type: 2}
+  _ColorSchemes:
+  - {fileID: 11400000, guid: a3478e2b872c92d4b8d453b73076e465, type: 2}
+  - {fileID: 11400000, guid: 6a868e35c53e924498e862cd48c5b471, type: 2}
+  - {fileID: 11400000, guid: dc30bc0d9cd5c9842940b8e229ff7217, type: 2}
+  - {fileID: 11400000, guid: 9b103c8cec39d3544a83a19637a35eac, type: 2}
+  - {fileID: 11400000, guid: 4dee57aba265cb04db8627bcc99d77d5, type: 2}
+  - {fileID: 11400000, guid: d97a245b1350c7b46a41d7b01e34b51f, type: 2}
   _UIHolder: {fileID: 915763647}
   _TargetImagePrefab: {fileID: 8736642149949679981, guid: 7ff82b9055b9e38488843edf638e238d, type: 3}
   _LayerCompute: {fileID: 7200000, guid: 85872858f2d5ea84ca111da1e4cbb42b, type: 3}

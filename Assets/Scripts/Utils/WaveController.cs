@@ -41,6 +41,7 @@ public class WaveController : MonoBehaviour
         _MainInput.WaveController.BeatMultiplier.performed += ScrollListener;
         _MainInput.WaveController.BandSelector.performed += ArrowListener;
         _MainInput.WaveController.ShowHideUi.performed += DebugUI;
+        _MainInput.WaveController.ChangeColor.performed += ChangeColorListener;
     }
 
     // Update is called once per frame
@@ -94,6 +95,11 @@ public class WaveController : MonoBehaviour
         }
 
         Debug.Log("Arrow: " + _BeatIndex);
+    }
+
+    void ChangeColorListener(InputAction.CallbackContext context)
+    {
+        _LayerManager.NextColorScheme();
     }
 
     void DebugUI(InputAction.CallbackContext context)

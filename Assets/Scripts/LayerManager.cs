@@ -16,9 +16,11 @@ public class LayerManager : MonoBehaviour
     
     [SerializeField] private float2 _TimeScale;
     [SerializeField, Range(1, 20)] private int _Levels = 5;
-    
-    [SerializeField] private Color[] _Colors;
-    [SerializeField] private ColorTemplate _Preset;
+
+    //[SerializeField] private Color[] _Colors;
+    [SerializeField] private ColorTemplate[] _ColorSchemes;
+    private ColorTemplate _CurrentColor;
+    private int _CurrentColorIndex;
 
     [SerializeField] private GameObject _UIHolder;
     [SerializeField] private RawImage _TargetImagePrefab;
@@ -78,6 +80,13 @@ public class LayerManager : MonoBehaviour
     [SerializeField] public float[][] _Spectrum;
 
     #region Unity Callbacks
+
+    private void Awake()
+    {
+        _CurrentColor = _ColorSchemes[0];
+        _CurrentColorIndex = 0;
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -278,17 +287,7 @@ public class LayerManager : MonoBehaviour
         _NoiseCompute.SetInt("_TexWidth", width);
         _NoiseCompute.SetInt("_TexHeight", height);
 
-        //! Colors
-        _ColorBuffer = new ComputeBuffer(_Preset._Colors.Length, 3 * sizeof(float));
-
-        _ColorBackUp = new float3[_Preset._Colors.Length];
-
-        for (int i = 0; i < _ColorBackUp.Length; i++)
-            _ColorBackUp[i] = new float3(_Preset._Colors[i].r, _Preset._Colors[i].g, _Preset._Colors[i].b);
-
-        _ColorBuffer.SetData(_ColorBackUp);
-        _LayerCompute.SetBuffer(_LayerKernelIndex, "_Colors", _ColorBuffer);
-        _LayerCompute.SetInt("numberOfColors", _Preset._Colors.Length);
+        SetComputeColors();
 
         _WaveDataBuffer = new ComputeBuffer(25, sizeof(float) * 4);
         _AFDataBuffer = new ComputeBuffer(25, sizeof(float) * 4);
@@ -473,5 +472,27 @@ public class LayerManager : MonoBehaviour
             
     }
     #endregion
+
+    public void NextColorScheme()
+    {
+        _CurrentColorIndex = (_CurrentColorIndex + 1) % _ColorSchemes.Length;
+        _CurrentColor = _ColorSchemes[_CurrentColorIndex];
+        SetComputeColors();
+    }
+
+    void SetComputeColors()
+    {
+        //! Colors
+        _ColorBuffer = new ComputeBuffer(_CurrentColor.Colors.Length, 3 * sizeof(float));
+
+        _ColorBackUp = new float3[_CurrentColor.Colors.Length];
+
+        for (int i = 0; i < _ColorBackUp.Length; i++)
+            _ColorBackUp[i] = new float3(_CurrentColor.Colors[i].r, _CurrentColor.Colors[i].g, _CurrentColor.Colors[i].b);
+
+        _ColorBuffer.SetData(_ColorBackUp);
+        _LayerCompute.SetBuffer(_LayerKernelIndex, "_Colors", _ColorBuffer);
+        _LayerCompute.SetInt("numberOfColors", _CurrentColor.Colors.Length);
+    }
 
 }
