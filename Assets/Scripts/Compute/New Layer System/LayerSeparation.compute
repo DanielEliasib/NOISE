@@ -1,0 +1,32 @@
+﻿#pragma kernel LayerSeparation
+
+//! Data
+StructuredBuffer<float3> _Colors;
+StructuredBuffer<float> _NoiseLayer;
+
+RWTexture2DArray<float4> Layers;
+
+int numberOfColors;
+uint levels;
+uint _TexWidth, _TexHeight;
+
+[numthreads(8,8,4)]
+void LayerSeparation(uint3 id : SV_DispatchThreadID)
+{
+	if (id.z < levels)
+	{
+        float step = (1.0f) / (levels);
+        int currentColor = (int) (id.z * step * (numberOfColors - 1));
+        float3 color = lerp(_Colors[currentColor], _Colors[currentColor + 1], id.z * step * numberOfColors - currentColor);   //Esta se puede ahorrar
+        uint3 id2, id3, id4;
+
+        id2 = uint3(_TexWidth-1 - id.x, id.y, id.z);
+        id3 = uint3(id.x, _TexHeight-1 - id.y, id.z);
+        id4 = uint3(_TexWidth-1 - id.x, _TexHeight-1 - id.y, id.z);
+
+        Layers[id] = float4(color, 1.0f * ((id.z + 1) * step <= _NoiseLayer[id.y * _TexWidth + id.x]));
+        Layers[id2] = float4(color, 1.0f * ((id.z + 1) * step <= _NoiseLayer[id2.y * _TexWidth + id2.x]));
+        Layers[id3] = float4(color, 1.0f * ((id.z + 1) * step <= _NoiseLayer[id3.y * _TexWidth + id3.x]));
+        Layers[id4] = float4(color, 1.0f * ((id.z + 1) * step <= _NoiseLayer[id4.y * _TexWidth + id4.x]));
+    }
+}

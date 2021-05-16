@@ -9,13 +9,18 @@ public class ScreenSizeListener
     public List<RawImage> _Layers;
     private float ratio = 0;
     private float separationRatio = 0;
+    private WaitForSeconds _WaitXSeconds;
+    private WaitForEndOfFrame _WaitEndOfFrame;
 
-    public void Awake()
+    public void Awake(MonoBehaviour mono)
     {
         _CurrentResolution = new Vector2(Screen.width, Screen.height);
         Debug.Log("Res: " + _CurrentResolution);
         ratio = 10.0f/ 1080.0f;
         separationRatio = 15f/1080.0f;
+        //_WaitXSeconds = new WaitForSeconds(30);
+        //_WaitEndOfFrame = new WaitForEndOfFrame();
+        //mono.StartCoroutine(Resize());              //? Why do I resize every 30 seconds?
         //AdjustScale();
     }
 
@@ -45,4 +50,16 @@ public class ScreenSizeListener
             i++;
         }
     }
+
+    //IEnumerator Resize()
+    //{
+    //    //while (true)
+    //    //{
+    //    //    Screen.SetResolution(Screen.width-2, Screen.height, false, 60);
+    //    //    Debug.Log("Resize");
+    //    //    yield return _WaitEndOfFrame;
+    //    //    Screen.SetResolution(Screen.width + 2, Screen.height, false, 60);
+    //    //    yield return _WaitXSeconds;
+    //    //}
+    //}
 }

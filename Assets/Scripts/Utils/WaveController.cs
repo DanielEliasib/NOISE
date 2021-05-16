@@ -90,7 +90,7 @@ public class WaveController : MonoBehaviour
         {
             _BeatIndex += value;
             _BeatIndex = _BeatIndex % _LayerManager._BeatMultipliers.Length;
-            _BeatIndex = _BeatIndex < 0 ? _LayerManager._BeatMultipliers.Length - _BeatIndex : _BeatIndex;
+            _BeatIndex = _BeatIndex < 0 ? _LayerManager._BeatMultipliers.Length + _BeatIndex : _BeatIndex;
         }
 
         Debug.Log("Arrow: " + _BeatIndex);
