@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class ScreenSizeListener
 {
     Vector2 _CurrentResolution;
-    public List<RawImage> _Layers;
+    public List<Transform> _Layers;
     private float ratio = 0;
     private float separationRatio = 0;
     private WaitForSeconds _WaitXSeconds;
@@ -16,8 +16,8 @@ public class ScreenSizeListener
     {
         _CurrentResolution = new Vector2(Screen.width, Screen.height);
         Debug.Log("Res: " + _CurrentResolution);
-        ratio = 10.0f/ 1080.0f;
-        separationRatio = 15f/1080.0f;
+        ratio = 750.0f/ 1080.0f;
+        separationRatio = 25f/1080.0f;
         //_WaitXSeconds = new WaitForSeconds(30);
         //_WaitEndOfFrame = new WaitForEndOfFrame();
         //mono.StartCoroutine(Resize());              //? Why do I resize every 30 seconds?
@@ -46,8 +46,8 @@ public class ScreenSizeListener
         int i = 0;
         foreach (var layer in _Layers)
         {
-            layer.transform.localPosition = new Vector3(0.0f, i*separation - offset, 0.0f);
-            layer.rectTransform.localScale = scaleV3;
+            layer.transform.localPosition = new Vector3(0.0f, i*separation - offset, _Layers.Count-i);
+            layer.transform.localScale = scaleV3;
             i++;
         }
     }

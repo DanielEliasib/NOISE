@@ -1,7 +1,7 @@
 ﻿#pragma kernel NoiseLayerGenerator
 #include "../kj/SimplexNoise3D.hlsl"
 
-RWStructuredBuffer<float> _NoiseLayer;
+RWTexture2D<float4> _NoiseData;
 
 //! Data
 StructuredBuffer<float4> _WaveData;		// x:vel, y:lambda, z:k, w:w
@@ -35,6 +35,8 @@ float WaveProcessor(float t, float r)
 [numthreads(8,8,1)]
 void NoiseLayerGenerator(uint3 id : SV_DispatchThreadID)
 {
+    uint2 id2, id3, id4;
+    
     uint3 wavePoint = id - int3(_TexWidth / 2, _TexHeight / 2, 0);
     float wRad = sqrt(wavePoint.x * wavePoint.x + wavePoint.y * wavePoint.y);
     
@@ -44,5 +46,14 @@ void NoiseLayerGenerator(uint3 id : SV_DispatchThreadID)
 			snoise_grad((id * 3 + float3(_Offset2, 0)) / _Freq2).xyz
 		);
 	
-    _NoiseLayer[id.y * _TexWidth + id.x] = (noise / 20.0f + 0.6f) * 0.5f + WaveProcessor(_Time, wRad);
+    noise = (noise / 20.0f + 0.6f) * 0.5f + WaveProcessor(_Time, wRad);
+    
+    id2 = uint2(_TexWidth - 1 - id.x, id.y);
+    id3 = uint2(id.x, _TexHeight - 1 - id.y);
+    id4 = uint2(_TexWidth - 1 - id.x, _TexHeight - 1 - id.y);
+
+    _NoiseData[id.xy] = float4(noise, noise, noise, noise);
+    _NoiseData[id2] = float4(noise,noise,noise,noise);
+    _NoiseData[id3] = float4(noise,noise,noise,noise);
+    _NoiseData[id4] = float4(noise,noise,noise,noise);
 }
