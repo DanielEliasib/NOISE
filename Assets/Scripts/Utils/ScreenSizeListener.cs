@@ -16,8 +16,8 @@ public class ScreenSizeListener
     {
         _CurrentResolution = new Vector2(Screen.width, Screen.height);
         Debug.Log("Res: " + _CurrentResolution);
-        ratio = 750.0f/ 1080.0f;
-        separationRatio = 25f/1080.0f;
+        ratio = 850.0f/ 1080.0f;
+        separationRatio = 15f/1080.0f;
         //_WaitXSeconds = new WaitForSeconds(30);
         //_WaitEndOfFrame = new WaitForEndOfFrame();
         //mono.StartCoroutine(Resize());              //? Why do I resize every 30 seconds?

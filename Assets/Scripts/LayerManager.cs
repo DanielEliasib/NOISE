@@ -124,7 +124,7 @@ public class LayerManager : MonoBehaviour
         for (int i = 0; i < _LevelsPriv; i++)
         {
             var obj = Instantiate(_TargetQuad, _UIHolder.transform);
-            obj.transform.localPosition = new float3(0.0f, i * 15f - 50, i* step * 0.01f);
+            //obj.transform.localPosition = new float3(0.0f, i * 15f - 75, i* step * 0.005f);
             obj.transform.localRotation = Quaternion.Euler(70, 0, -45);
             
 
@@ -137,7 +137,7 @@ public class LayerManager : MonoBehaviour
             var ren = obj.GetComponent<Renderer>();
             ren.material.SetTexture("Texture2D_357675f864c14116816d9c8d7bf4d02c", _NoiseTex);
             ren.material.SetColor("Color_b422946d4dd44b25973975f9d477332c", color);
-            ren.material.SetFloat("Vector1_8d60240980eb4a2e9c785044f80c1bd2", (i-2)*step);
+            ren.material.SetFloat("Vector1_8d60240980eb4a2e9c785044f80c1bd2", (i+1)*step);
 
             _LayerContainer.Add(obj.transform);
         }
