@@ -48,12 +48,12 @@ void NoiseLayerGenerator(uint3 id : SV_DispatchThreadID)
 	
     noise = (noise / 20.0f + 0.6f) * 0.5f + WaveProcessor(_Time, wRad);
     
-    id2 = uint2(_TexWidth - 1 - id.x, id.y);
-    id3 = uint2(id.x, _TexHeight - 1 - id.y);
-    id4 = uint2(_TexWidth - 1 - id.x, _TexHeight - 1 - id.y);
+    //id2 = uint2(_TexWidth - 1 - id.x, id.y);
+    //id3 = uint2(id.x, _TexHeight - 1 - id.y);
+    //id4 = uint2(_TexWidth - 1 - id.x, _TexHeight - 1 - id.y);
 
     _NoiseData[id.xy] = float4(noise, noise, noise, noise);
-    _NoiseData[id2] = float4(noise,noise,noise,noise);
-    _NoiseData[id3] = float4(noise,noise,noise,noise);
-    _NoiseData[id4] = float4(noise,noise,noise,noise);
+    //_NoiseData[id2] = float4(noise,noise,noise,noise);
+    //_NoiseData[id3] = float4(noise,noise,noise,noise);
+    //_NoiseData[id4] = float4(noise,noise,noise,noise);
 }

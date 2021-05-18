@@ -137,7 +137,7 @@ public class LayerManager : MonoBehaviour
             var ren = obj.GetComponent<Renderer>();
             ren.material.SetTexture("Texture2D_357675f864c14116816d9c8d7bf4d02c", _NoiseTex);
             ren.material.SetColor("Color_b422946d4dd44b25973975f9d477332c", color);
-            ren.material.SetFloat("Vector1_8d60240980eb4a2e9c785044f80c1bd2", (i+1)*step);
+            ren.material.SetFloat("Vector1_8d60240980eb4a2e9c785044f80c1bd2", (i-2)*step);
 
             _LayerContainer.Add(obj.transform);
         }
@@ -348,7 +348,7 @@ public class LayerManager : MonoBehaviour
     void DispatchNoiseShaders()
     {
         SetNoiseParameters(_Frecuency1, _Frecuency2, _Offset1, _Offset2);
-        _NoiseCompute.Dispatch(_NoiseKernelIndex, (width/2) / 8, (height/2) / 8, 1);
+        _NoiseCompute.Dispatch(_NoiseKernelIndex, width / 8, height / 8, 1);
     }
 
     #endregion
