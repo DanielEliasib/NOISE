@@ -12,39 +12,38 @@ using System.Linq;
 
 public class LayerManager : MonoBehaviour
 {
+    [Header("Noise parameters")]
     [SerializeField, Range(1, 1000)] private float _Frecuency1, _Frecuency2;
     
     [SerializeField] private float2 _TimeScale;
+    [SerializeField] private int _SpectrumRes = 250;
+
+    [Header("Layer parameters")]
     [SerializeField, Range(1, 20)] private int _Levels = 5;
 
+    [Header("Color parameters")]
     [SerializeField] private ColorTemplate[] _ColorSchemes;
     private int _CurrentColorIndex;
 
+    [Header("Layer Spawning")]
     [SerializeField] private GameObject _UIHolder;
     [SerializeField] private GameObject _TargetQuad;
-    //[SerializeField] private RawImage _TargetImagePrefab;
 
-    // Compute Variables
-    //[SerializeField] private ComputeShader _LayerCompute;
+    [Header("Noise compute")]
     [SerializeField] private ComputeShader _NoiseCompute;
 
     ComputeBuffer _ColorBuffer;
     ComputeBuffer _WaveDataBuffer;
     ComputeBuffer _AFDataBuffer;
-    //ComputeBuffer _NoiseDataBuffer;
     ComputeBuffer _AmpDataBuffer;
 
-    private int _NoiseKernelIndex, _LayerKernelIndex;
-    private string _NoiseKernelName = "NoiseLayerGenerator", _LayerKernelName = "LayerSeparation";
+    private int _NoiseKernelIndex;
+    private string _NoiseKernelName = "NoiseLayerGenerator";
 
     private float2 _Offset1, _Offset2;
     private int _LevelsPriv;
-    // Colors Saved
-    private float3[] _ColorBackUp;
 
     // Texture Containers
-    //private RenderTexture _Layers;
-    //private RenderTexture[] _Aux;
     private RenderTexture _NoiseTex;
 
     private int width = 256, height = 256;
@@ -55,8 +54,6 @@ public class LayerManager : MonoBehaviour
     private List<float4> _AFDataBack;
     private List<float> _AmpData;
     private List<float> _AmpDataBack;
-
-    [SerializeField] private int _SpectrumRes = 250;
 
     private double _Cooldown;
     private bool _CooldownActive;
@@ -103,14 +100,6 @@ public class LayerManager : MonoBehaviour
 
         _LevelsPriv = _Levels;
 
-        // All the layers un GPU memmory
-        //_Layers = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
-        //_Layers.filterMode = FilterMode.Bilinear;
-        //_Layers.dimension = UnityEngine.Rendering.TextureDimension.Tex2DArray;
-        //_Layers.enableRandomWrite = true;
-        //_Layers.volumeDepth = _LevelsPriv;
-        //_Layers.Create();
-
         _NoiseTex = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
         _NoiseTex.enableRandomWrite = true;
         _NoiseTex.Create();
@@ -152,7 +141,6 @@ public class LayerManager : MonoBehaviour
         _WaveDataBack = new List<float4>();
         _AFDataBack = new List<float4>();
         _AmpDataBack = new List<float>();
-        //_TargetImage.texture = _Layers;
 
         //Loopback objects
         _BandData = new List<BandData>()
@@ -183,7 +171,7 @@ public class LayerManager : MonoBehaviour
 
         _Loopback = new LoopbackCapture(_SpectrumRes, ScalingStrategy.Sqrt, _BandData, _FilterData);
 
-        //  Operations are done in the fixed update. Set to 0.015 seconds, so 67 frames is about 1 second.
+        // Operations are done in the fixed update. Set to 0.015 seconds, so 67 frames is about 1 second.
         _Loopback.StartListening();
 
         _LongBandProms = new List<float>[_BandData.Count];
@@ -204,32 +192,9 @@ public class LayerManager : MonoBehaviour
 
     }
 
-    void OnGUI()
-    {
-        if (Event.current.type.Equals(EventType.Repaint))
-        {
-            // for (int i = 0; i < _LevelsPriv; i++)
-            // {
-            //     GL.PushMatrix();
-            //     GL.LoadProjectionMatrix(Camera.main.projectionMatrix);
-                
-            //     GL.modelview = Camera.main.worldToCameraMatrix * this.transform.localToWorldMatrix;
-            //     Graphics.DrawTexture(new Rect(0, 0, i, 1), _Aux[i]);
-            //     GL.PopMatrix();
-            // }
-            
-        }
-    }
-
     // Update is called once per frame
     void FixedUpdate()
     {
-        //Blit last frame data in order to let the compute shader work for at least one frame.
-        //for(int i = 0 ; i < _LevelsPriv; i++)
-        //{
-        //    Graphics.Blit(_Layers, _Aux[i], i, 0);
-        //}
-
         _SizeListener.Update();
 
         _Offset1.y = Time.time * _TimeScale.x;
@@ -241,8 +206,6 @@ public class LayerManager : MonoBehaviour
         SetNoiseParameters(_Frecuency1, _Frecuency2, _Offset1, _Offset2);
 
         DispatchNoiseShaders();
-        
-        //_LayerCompute.Dispatch(_NoiseKernelIndex, (width/2) / 8, (height/2) / 8, _Levels%4==0?_Levels/4 : _Levels / 4 + 1);
 
         if (_CooldownActive)
             _Cooldown -= Time.deltaTime;
@@ -276,19 +239,12 @@ public class LayerManager : MonoBehaviour
 
     void InitCompute()
     {
-        //_LayerKernelIndex = _LayerCompute.FindKernel(_LayerKernelName);
         _NoiseKernelIndex = _NoiseCompute.FindKernel(_NoiseKernelName);
 
         //_LayerCompute.SetTexture(_LayerKernelIndex, "Layers", _Layers);
-        //_LayerCompute.SetInt("levels", _LevelsPriv);
-
-        //_LayerCompute.SetInt("_TexWidth", width);
-        //_LayerCompute.SetInt("_TexHeight", height);
 
         _NoiseCompute.SetInt("_TexWidth", width);
         _NoiseCompute.SetInt("_TexHeight", height);
-
-        SetComputeColors(_ColorSchemes[0]);
 
         _WaveDataBuffer = new ComputeBuffer(25, sizeof(float) * 4);
         _AFDataBuffer = new ComputeBuffer(25, sizeof(float) * 4);
@@ -476,22 +432,25 @@ public class LayerManager : MonoBehaviour
     public void NextColorScheme()
     {
         _CurrentColorIndex = (_CurrentColorIndex + 1) % _ColorSchemes.Length;
-        SetComputeColors(_ColorSchemes[_CurrentColorIndex]);
+        SetColorScheme();
     }
 
-    void SetComputeColors(ColorTemplate current)
+    public void SetColorScheme()
     {
-        //! Colors
-        _ColorBuffer = new ComputeBuffer(current.Colors.Length, 3 * sizeof(float));
+        float step = (1.0f) / _LevelsPriv;
 
-        _ColorBackUp = new float3[current.Colors.Length];
+        ColorTemplate _CurrentColorScheme = _ColorSchemes[_CurrentColorIndex];
 
-        for (int i = 0; i < _ColorBackUp.Length; i++)
-            _ColorBackUp[i] = new float3(current.Colors[i].r, current.Colors[i].g, current.Colors[i].b);
+        for (int i = 0; i < _LayerContainer.Count; i++)
+        {
+            var ren = _LayerContainer[i].GetComponent<Renderer>();
 
-        _ColorBuffer.SetData(_ColorBackUp);
-        //_LayerCompute.SetBuffer(_LayerKernelIndex, "_Colors", _ColorBuffer);
-        //_LayerCompute.SetInt("numberOfColors", current.Colors.Length);
+            int currentColorID = (int)(i * step * (_CurrentColorScheme.Colors.Length - 1));
+
+            Color color = Color.Lerp(_CurrentColorScheme.Colors[currentColorID], _CurrentColorScheme.Colors[currentColorID + 1], i * step * _CurrentColorScheme.Colors.Length - currentColorID);
+
+            ren.material.SetColor("Color_b422946d4dd44b25973975f9d477332c", color);
+        }
     }
 
 }
