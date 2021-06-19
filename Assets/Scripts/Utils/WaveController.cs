@@ -23,6 +23,10 @@ public class WaveController : MonoBehaviour
 
     int _BeatIndex;
 
+    private float[] _BeatMultipliers;
+    private float[] _LongProms;
+    private float[][] _Spectrum;
+
     private void Awake()
     {
         _MainInput = new WaveInput();
@@ -38,6 +42,8 @@ public class WaveController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        _LayerManager.BindArrayData(out _BeatMultipliers, out _LongProms, out _Spectrum);
+
         _MainInput.WaveController.BeatMultiplier.performed += ScrollListener;
         _MainInput.WaveController.BandSelector.performed += ArrowListener;
         _MainInput.WaveController.ShowHideUi.performed += DebugUI;
@@ -49,10 +55,6 @@ public class WaveController : MonoBehaviour
     {
         if (_ActiveUI)
         {
-            var _Spectrum = _LayerManager._Spectrum;
-            var _LongProms = _LayerManager._LongProms;
-            var _BeatMultipliers = _LayerManager._BeatMultipliers;
-
             if (_Spectrum != null)
                 if (_Spectrum[_BeatIndex] != null)
                     _WaveDrawer.SetComputeData
@@ -65,7 +67,6 @@ public class WaveController : MonoBehaviour
                 _TextHolder.SetText(string.Format(_DummyString, _BeatIndex, _BeatMultipliers[_BeatIndex]));
             }
         }
-        
     }
 
     private void OnDisable()
@@ -76,10 +77,10 @@ public class WaveController : MonoBehaviour
     void ScrollListener(InputAction.CallbackContext context)
     {
         var value = context.ReadValue<Vector2>();
-        if(_LayerManager != null)
+        if(_BeatMultipliers != null && _LongProms != null && _Spectrum != null)
         {
-            var bMult = _LayerManager._BeatMultipliers[_BeatIndex] + value.y * 0.025f;
-            _LayerManager._BeatMultipliers[_BeatIndex] = Mathf.Clamp(bMult, 1.0f, 10.0f);
+            var bMult = _BeatMultipliers[_BeatIndex] + value.y * 0.025f;
+            _BeatMultipliers[_BeatIndex] = Mathf.Clamp(bMult, 1.0f, 10.0f);
         }
         Debug.Log("Val: " + value);
     }
@@ -87,11 +88,11 @@ public class WaveController : MonoBehaviour
     void ArrowListener(InputAction.CallbackContext context)
     {
         var value = (int)context.ReadValue<float>();
-        if (_LayerManager != null)
+        if (_BeatMultipliers != null && _LongProms != null && _Spectrum != null)
         {
             _BeatIndex += value;
-            _BeatIndex = _BeatIndex % _LayerManager._BeatMultipliers.Length;
-            _BeatIndex = _BeatIndex < 0 ? _LayerManager._BeatMultipliers.Length + _BeatIndex : _BeatIndex;
+            _BeatIndex = _BeatIndex % _BeatMultipliers.Length;
+            _BeatIndex = _BeatIndex < 0 ? _BeatMultipliers.Length + _BeatIndex : _BeatIndex;
         }
 
         Debug.Log("Arrow: " + _BeatIndex);
