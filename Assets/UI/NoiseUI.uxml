@@ -1,5 +1,23 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="Noise.uss" />
     <ui:VisualElement name="Panel" style="width: 100%; height: 100%; flex-direction: row;">
-        <ui:VisualElement name="LeftPanel" style="width: 50%;" />
+        <ui:VisualElement name="LeftPanel" style="width: 25%; max-width: 50%; height: 100%; max-height: 100%; min-width: 200px; padding-left: 10px; padding-right: 10px; padding-top: 10px; padding-bottom: 10px; background-color: rgba(0, 0, 0, 0);">
+            <ui:VisualElement name="InnerPanel" style="width: 100%; height: 100%; background-color: rgba(51, 54, 59, 0.59); border-top-left-radius: 5px; border-bottom-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px;">
+                <ui:VisualElement name="TitleBar" style="width: 100%; height: 50px; margin-top: 10px; padding-right: 20px; padding-left: 20px; justify-content: center;">
+                    <ui:Label text="Themes" display-tooltip-when-elided="true" style="-unity-font: url(&apos;/Assets/Fonts/ONEDAY/ONEDAY.ttf&apos;); font-size: 28px; -unity-font-style: bold; -unity-text-align: middle-left; color: rgb(233, 233, 233);" />
+                </ui:VisualElement>
+                <ui:VisualElement name="Separator" style="width: auto; height: 5px; background-color: rgb(255, 255, 255); border-top-left-radius: 0; border-bottom-left-radius: 0; border-top-right-radius: 5px; border-bottom-right-radius: 5px; padding-left: 0; margin-left: 20px; margin-right: 10px; margin-top: 10px; margin-bottom: 10px;" />
+                <ui:VisualElement name="ThemePreview" style="height: auto; padding-left: 20px; padding-right: 10px; padding-top: 5px; padding-bottom: 5px;">
+                    <ui:VisualElement name="InnerPanel" style="background-color: rgba(24, 23, 23, 0.88); width: 100%; height: 100%; border-top-left-radius: 5px; border-bottom-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px;">
+                        <ui:VisualElement name="Preview" style="width: 100%; height: 100px; justify-content: flex-end; align-items: center;">
+                            <ui:IMGUIContainer style="height: 90px; width: 165px; background-color: rgb(214, 214, 214);" />
+                        </ui:VisualElement>
+                        <ui:VisualElement name="Name" style="height: 30px; padding-left: 25px; padding-right: 0; padding-top: 0; padding-bottom: 0; justify-content: center;">
+                            <ui:Label text="Theme #n" display-tooltip-when-elided="true" style="-unity-font: url(&apos;/Assets/Fonts/ONEDAY/ONEDAY.otf&apos;); font-size: 12px; -unity-text-align: middle-left; color: rgb(226, 226, 226);" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
