@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace AL.AudioSystem
 {
@@ -53,24 +54,23 @@ namespace AL.AudioSystem
             SpectrumPointData[] spectrumPoints = CalculateSpectrumPoints(maxValue, fftBuffer, bandIndex);
 
             // Convert to float[]
-            List<float> spectrumData = new List<float>();
-            spectrumPoints.ToList().
-                ForEach
-                (
-                    point =>
-                    {
-                        float val = (float)point.Value;
-                        if (_BandFrecuencies.TryGetValue(bandIndex, out var filterList))
-                        {
-                            foreach (var filter in filterList)
-                                val = filter.Process(val);
-                        }
+            float[] spectrumData = new float[spectrumPoints.Length];
 
-                        spectrumData.Add(val);
-                    }
-                );
-            return spectrumData.ToArray();
+            Parallel.For(0, spectrumPoints.Length, i =>
+            {
+                SpectrumPointData point = spectrumPoints[i];
 
+                float val = (float) point.Value;
+                if (_BandFrecuencies.TryGetValue(bandIndex, out var filterList))
+                {
+                    foreach (var filter in filterList)
+                        val = filter.Process(val);
+                }
+
+                spectrumData[i] = val;
+            });
+            
+            return spectrumData;
         }
 
         void Test()

@@ -1,0 +1,35 @@
+#pragma kernel NoiseLayerGenerator
+#include "../kj/SimplexNoise3D.hlsl"
+
+RWTexture2D<float4> _NoiseData;
+
+StructuredBuffer<float> _WaveData;
+
+uint _TexWidth, _TexHeight;
+
+float2 _Offset1, _Offset2;
+
+float _Freq1, _Freq2;
+float _Time;
+
+int dataSize;
+float rad;
+
+[numthreads(8,8,1)]
+void NoiseLayerGenerator (uint3 id : SV_DispatchThreadID)
+{
+    uint2 id2, id3, id4;
+    
+    uint3 wavePoint = id - int3(_TexWidth / 2, _TexHeight / 2, 0);
+    float wRad = sqrt(wavePoint.x * wavePoint.x + wavePoint.y * wavePoint.y) / rad;
+
+    float noise =
+            dot(
+                snoise_grad((id * 3 + float3(0, _Offset1)) / _Freq1).xyz,
+                snoise_grad((id * 3 + float3(_Offset2, 0)) / _Freq2).xyz
+            );
+    
+    _NoiseData[id.xy] = float4(0, 0, 0, (noise / 20.0f + 0.6f) * 0.35f + _WaveData[wRad * dataSize]*0.3f);
+    //_NoiseData[id.xy] = float4(0, 0, 0, (noise / 20.0f + 0.6f) * 0.35f + log(_WaveData[wRad * dataSize]*0.3f + 1.0f));
+    //_NoiseData[id.xy] = _WaveData[wRad * dataSize]*0.5f;
+}

@@ -8,7 +8,9 @@ using CSCore.SoundIn;
 using CSCore.Streams;
 using Assets.Scripts.Audio;
 using System;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace AL.AudioSystem
 {
@@ -45,6 +47,8 @@ namespace AL.AudioSystem
 
         private List<(DSPFilters, float)>[] _FilterData;
 
+        private byte[] dataBuffer;
+        
         public LoopbackCapture(int spectrumResolution, ScalingStrategy scalingStrategy, List<BandData> bandData, List<(DSPFilters, float)>[] filters)
         {
             _Capture = new WasapiLoopbackCapture();
@@ -131,6 +135,8 @@ namespace AL.AudioSystem
 
             _RealTimeSource = _SingleBlockNotificationStream.ToWaveSource();
 
+            dataBuffer = new byte[_RealTimeSource.WaveFormat.BytesPerSecond / 2];
+            
             _SoundSource.DataAvailable += _SoundSource_DataAvailable;
 
             _SingleBlockNotificationStream.SingleBlockRead += singleBlockNotificationStream_SingleBlockRead;
@@ -151,21 +157,17 @@ namespace AL.AudioSystem
         //Private Methods
         private void _SoundSource_DataAvailable(object sender, DataAvailableEventArgs e)
         {
-            
-            byte[] buffer = new byte[_RealTimeSource.WaveFormat.BytesPerSecond / 2];
-
-            while (_RealTimeSource.Read(buffer, 0, buffer.Length) > 0)
+            while (_RealTimeSource.Read(dataBuffer, 0, dataBuffer.Length) > 0)
             {
-                for(int i  = 0; i < SpectrumData.Length; i++)
+                Parallel.For(0, SpectrumData.Length, i =>
                 {
                     float[] spectrumData = _BandSpectrum.GetSpectrumData(_MaxAudioValue, i);
 
-                    if (spectrumData != null)
+                    if (!(spectrumData is null))
                     {
-                        //OPTIMIZE
-                        SpectrumData[i] = spectrumData.ToArray();
+                        SpectrumData[i] = spectrumData;
                     }
-                }
+                });
             }
         }
 

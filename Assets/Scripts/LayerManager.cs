@@ -44,8 +44,9 @@ public class LayerManager : MonoBehaviour
     private List<float4> _AFData;
     private List<float> _AmpData;
 
-    AudioAnalyser _AudioAnalyser;
-    WaveProcessor _WaveProcessor;
+    //AudioAnalyser _AudioAnalyser;
+    private WaveBaker _WaveBaker;
+    NewWaveProcessor _WaveProcessor;
 
     List<BandData> _BandData;
     List<(DSPFilters, float)>[] _FilterData;
@@ -99,14 +100,27 @@ public class LayerManager : MonoBehaviour
             }
         };
 
-        _AudioAnalyser = new AudioAnalyser(_BandData, _FilterData, _SpectrumRes, 67);
+        //_AudioAnalyser = new AudioAnalyser(_BandData, _FilterData, _SpectrumRes, 67);
 
-        _AudioAnalyser.BindWaveData(out _WaveData, out _AFData, out _AmpData);
-        _AudioAnalyser.BindArrayData(out _BeatMultipliers, out _LongProms, out _Spectrum);
+        //_AudioAnalyser.BindWaveData(out _WaveData, out _AFData, out _AmpData);
+        //_AudioAnalyser.BindArrayData(out _BeatMultipliers, out _LongProms, out _Spectrum);
 
+        _WaveBaker = new WaveBaker(
+            new BandData()
+            {
+                _minimumFrequency = 60,
+                _maximumFrequency = 1000
+            },
+            new List<(DSPFilters, float)>()
+            {
+                (DSPFilters.LowPass, 750)
+            },
+            _SpectrumRes, 67
+            );
+        
         //! ------------------------------------------
-        _WaveProcessor = new WaveProcessor(_NoiseCompute, new int2(width, height), new float2(_Frecuency1, _Frecuency2));
-        _WaveProcessor.BindWaveData(in _WaveData, in _AFData, in _AmpData, out _NoiseTex);
+        _WaveProcessor = new NewWaveProcessor(_NoiseCompute, new int2(width, height), new float2(_Frecuency1, _Frecuency2));
+        _WaveProcessor.BindWaveData(out _NoiseTex);
 
         //! ------------------------------------------
         _SizeListener = new ScreenSizeListener();
@@ -155,15 +169,16 @@ public class LayerManager : MonoBehaviour
     {
         _SizeListener.Update();
 
-        _WaveProcessor.Update(_TimeScale, Time.time);
-        _AudioAnalyser.ProcessAudio(Time.deltaTime);    //: Find a way to parallelize this
+        _WaveBaker.Update();
+        _WaveProcessor.Update(_WaveBaker.GetWave(), _TimeScale, Time.time);
+        
 
-        Debug.Log("Number of waves: " + _WaveData.Count);
+        //Debug.Log("Number of waves: " + _WaveData.Count);
     }
 
     private void OnDestroy()
     {
-        _AudioAnalyser.Destroy();
+        _WaveBaker.Destroy();
 
         _WaveProcessor.Dispose();
     }

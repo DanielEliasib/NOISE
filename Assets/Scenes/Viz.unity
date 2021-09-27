@@ -505,7 +505,8 @@ MonoBehaviour:
   _TimeScale:
     x: 15
     y: 20
-  _Levels: 15
+  _SpectrumRes: 250
+  _Levels: 20
   _ColorSchemes:
   - {fileID: 11400000, guid: a3478e2b872c92d4b8d453b73076e465, type: 2}
   - {fileID: 11400000, guid: 6a868e35c53e924498e862cd48c5b471, type: 2}
@@ -515,10 +516,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d97a245b1350c7b46a41d7b01e34b51f, type: 2}
   _UIHolder: {fileID: 915763647}
   _TargetQuad: {fileID: 5570489787528258002, guid: 5471dc9272952c848965f9d8e78ccb13, type: 3}
-  _NoiseCompute: {fileID: 7200000, guid: 8016fee858b59354d89138be1cd9f0ea, type: 3}
-  _SpectrumRes: 250
-  _BeatMultipliers: []
-  _LongProms: []
+  _NoiseCompute: {fileID: 7200000, guid: 9a230bae279772b40802de7d068b1ac9, type: 3}
 --- !u!114 &783983875
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -526,7 +524,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 783983872}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ddfdd712ca1256f4f843297244712985, type: 3}
   m_Name: 
@@ -543,7 +541,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 783983872}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ccd0520397fd2294f90f51afe7e4b226, type: 3}
   m_Name: 

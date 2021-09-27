@@ -1,139 +1,141 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 
 using AL.AudioSystem;
 using Unity.Mathematics;
+using Debug = System.Diagnostics.Debug;
 
 public class AudioAnalyser 
 {
-    private List<float4> _WaveData;
-    private List<float4> _AFData;
-    private List<float> _AmpData;
+    private List<float4> waveData;
+    private List<float4> afData;
+    private List<float> ampData;
 
-    private LoopbackCapture _Loopback;
+    private LoopbackCapture loopback;
 
-    private List<float>[] _LongBandProms;
-    private float[] _Peaks;
+    private List<float>[] longBandProms;
+    private float[] peaks;
 
-    List<BandData> _BandData;
-    List<(DSPFilters, float)>[] _FilterData;
+    List<BandData> bandData;
+    List<(DSPFilters, float)>[] filterData;
 
-    private bool _CooldownActive;
-    private double _Cooldown;
+    private bool cooldownActive;
+    private double cooldown;
 
-    public float[] _BeatMultipliers;
-    public float[] _LongProms;
-    public float[][] _Spectrum;
+    public float[] beatMultipliers;
+    public float[] longProms;
+    public float[][] spectrum;
 
     public AudioAnalyser(List<BandData> bandData, List<(DSPFilters, float)>[] filterData, int spectrumResolution, int nBuffer)
     {
-        _WaveData = new List<float4>();
-        _AFData = new List<float4>();
-        _AmpData = new List<float>();
+        waveData = new List<float4>();
+        afData = new List<float4>();
+        ampData = new List<float>();
 
         //! Loopback objects
-        _BandData = bandData;
-        _FilterData = filterData;
+        this.bandData = bandData;
+        this.filterData = filterData;
 
-        _Loopback = new LoopbackCapture(spectrumResolution, ScalingStrategy.Sqrt, _BandData, _FilterData);
+        loopback = new LoopbackCapture(spectrumResolution, ScalingStrategy.Sqrt, this.bandData, this.filterData);
 
-        _Loopback.StartListening();
+        loopback.StartListening();
 
-        _LongBandProms = new List<float>[_BandData.Count];
-        _BeatMultipliers = new float[_BandData.Count];
-        _Peaks = new float[_BandData.Count];
-        _LongProms = new float[_BandData.Count];
+        longBandProms = new List<float>[this.bandData.Count];
+        beatMultipliers = new float[this.bandData.Count];
+        peaks = new float[this.bandData.Count];
+        longProms = new float[this.bandData.Count];
 
-        for (int i = 0; i < _LongBandProms.Length; i++)
+        for (int i = 0; i < longBandProms.Length; i++)
         {
-            _LongBandProms[i] = new List<float>(nBuffer);
-            _BeatMultipliers[i] = 1.5f;
-            _Peaks[i] = float.MinValue;
+            longBandProms[i] = new List<float>(nBuffer);
+            beatMultipliers[i] = 1.5f;
+            peaks[i] = float.MinValue;
         }
 
-        _CooldownActive = false;
+        cooldownActive = false;
     }
 
     public void BindArrayData(out float[] beatMultiplier, out float[] longProms, out float[][] spectrum)
     {
-        beatMultiplier = _BeatMultipliers;
-        longProms = _LongProms;
-        spectrum = _Spectrum;
+        beatMultiplier = beatMultipliers;
+        longProms = this.longProms;
+        spectrum = this.spectrum;
     }
 
     public void BindWaveData(out List<float4> waveData, out List<float4> afData, out List<float> ampData)
     {
-        waveData = _WaveData;
-        afData = _AFData;
-        ampData = _AmpData;
+        waveData = this.waveData;
+        afData = this.afData;
+        ampData = this.ampData;
     }
 
     public void Destroy()
     {
-        _Loopback.StopListening();
+        loopback.StopListening();
     }
 
     #region Audio Analysis
     public void ProcessAudio(float time)
     {
-        _Cooldown -= time;
+        cooldown -= time;
 
-        _Spectrum = _Loopback.SpectrumData;
+        spectrum = loopback.SpectrumData;
 
-        float[] _BandProms = new float[_Spectrum.Length];
+        float[] _BandProms = new float[spectrum.Length];
 
-        for (int i = 0; i < _Spectrum.Length; i++)
+        for (int i = 0; i < spectrum.Length; i++)
         {
-            _Peaks[i] = float.MinValue;
+            peaks[i] = float.MinValue;
 
-            if (_Spectrum[i] != null)
+            if (spectrum[i] != null)
             {
-                for (int j = 0; j < _Spectrum[i].Length; j++)
+                for (int j = 0; j < spectrum[i].Length; j++)
                 {
-                    _BandProms[i] += _Spectrum[i][j];
+                    _BandProms[i] += spectrum[i][j];
 
                     //Find Peaks
                     if (j <= 0)
                     {
-                        if (_Spectrum[i][j] > _Spectrum[i][j + 1])
-                            _Peaks[i] = _Spectrum[i][j];
+                        if (spectrum[i][j] > spectrum[i][j + 1])
+                            peaks[i] = spectrum[i][j];
                     }
-                    else if (j >= _Spectrum.Length - 1)
+                    else if (j >= spectrum.Length - 1)
                     {
-                        if (_Spectrum[i][j] > _Spectrum[i][j - 1])
-                            _Peaks[i] = _Spectrum[i][j];
+                        if (spectrum[i][j] > spectrum[i][j - 1])
+                            peaks[i] = spectrum[i][j];
                     }
                     else
                     {
-                        if (_Spectrum[i][j] > _Spectrum[i][j - 1] && _Spectrum[i][j] > _Spectrum[i][j + 1])
-                            _Peaks[i] = _Spectrum[i][j];
+                        if (spectrum[i][j] > spectrum[i][j - 1] && spectrum[i][j] > spectrum[i][j + 1])
+                            peaks[i] = spectrum[i][j];
                     }
 
                 }
 
-                _BandProms[i] = _Spectrum[i].Length <= 0 ? 0 : _BandProms[i] / _Spectrum[i].Length;
+                _BandProms[i] = spectrum[i].Length <= 0 ? 0 : _BandProms[i] / spectrum[i].Length;
 
 
             }
         }
 
-        if (!_CooldownActive)
+        if (!cooldownActive)
         {
-            for (int i = 0; i < _LongBandProms.Length; i++)
+            for (int i = 0; i < longBandProms.Length; i++)
             {
                 var timeProm = 0.0f;
 
-                foreach (var prom in _LongBandProms[i])
+                foreach (var prom in longBandProms[i])
                 {
                     timeProm += prom;
                 }
 
-                timeProm = _LongBandProms[i].Count <= 0 ? 0 : timeProm / _LongBandProms[i].Count;
+                timeProm = longBandProms[i].Count <= 0 ? 0 : timeProm / longBandProms[i].Count;
 
-                _LongProms[i] = timeProm;
+                longProms[i] = timeProm;
 
-                if (_Peaks[i] >= Mathf.Min(_BeatMultipliers[i] * timeProm, timeProm + 1) && _BandProms[i] >= 0.25f)
+                if (peaks[i] >= Mathf.Min(beatMultipliers[i] * timeProm, timeProm + 1) && _BandProms[i] >= 0.25f)
                 {
                     switch (i)
                     {
@@ -146,32 +148,31 @@ public class AudioAnalyser
                         default:
                             break;
                     }
-                    _Cooldown = 0.015 * 5;
+                    cooldown = 0.015 * 5;
                 }
             }
         }
 
-        for (int i = 0; i < _LongBandProms.Length; i++)
+        for (int i = 0; i < longBandProms.Length; i++)
         {
-            if (_LongBandProms[i].Count >= _LongBandProms[i].Capacity && _LongBandProms[i].Capacity > 0)
-                _LongBandProms[i].RemoveAt(0);
+            if (longBandProms[i].Count >= longBandProms[i].Capacity && longBandProms[i].Capacity > 0)
+                longBandProms[i].RemoveAt(0);
 
-            _LongBandProms[i].Add(_BandProms[i]);
+            longBandProms[i].Add(_BandProms[i]);
         }
 
-        if (_Cooldown <= 0)
-            _CooldownActive = false;
-
+        if (cooldown <= 0)
+            cooldownActive = false;
     }
     #endregion
 
     #region Wave Processing
     void CreateWave(float w, float k, float amp, float decay)
     {
-        _WaveData.Add(new float4(w / k, 2 * Mathf.PI / k, k, w));
-        _AFData.Add(new float4(amp, decay, w / (2 * Mathf.PI), Time.time));
-        _AmpData.Add(amp);
-        _CooldownActive = true;
+        waveData.Add(new float4(w / k, 2 * Mathf.PI / k, k, w));
+        afData.Add(new float4(amp, decay, w / (2 * Mathf.PI), Time.time));
+        ampData.Add(amp);
+        cooldownActive = true;
     }
     #endregion
 }
