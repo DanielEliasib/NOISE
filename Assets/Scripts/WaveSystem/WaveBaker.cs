@@ -3,25 +3,25 @@ using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
 
-public class NewWaveProcessor
+public class WaveBaker
 {
    
-    private RenderTexture _NoiseTexture;
+    private readonly RenderTexture _NoiseTexture;
+    private readonly ComputeShader _NoiseCompute;
     
-    ComputeBuffer _WaveDataBuffer;
+    private const string _NoiseKernelName = "NoiseLayerGenerator";
     
-    private ComputeShader _NoiseCompute;
+    private ComputeBuffer _WaveDataBuffer;
     
     private int _NoiseKernelIndex;
-    private string _NoiseKernelName = "NoiseLayerGenerator";
 
-    private int texWidth, texHeight;
+    private readonly int texWidth, texHeight;
 
-    private float _TextureRadius = 0;
-    private float _Frecuency1, _Frecuency2;
+    private readonly float _TextureRadius = 0;
+    private readonly float _Frequency1, _Frequency2;
     private float2 _Offset1, _Offset2;
 
-    public NewWaveProcessor(ComputeShader shader, int2 size, float2 frec)
+    public WaveBaker(ComputeShader shader, int2 size, float2 freq)
     {
         _NoiseCompute = shader;
 
@@ -39,8 +39,8 @@ public class NewWaveProcessor
         _Offset1 += new float2(UnityEngine.Random.Range(-300, 300), UnityEngine.Random.Range(-300, 300));
         _Offset2 += new float2(UnityEngine.Random.Range(-300, 300), UnityEngine.Random.Range(-300, 300));
 
-        _Frecuency1 = frec.x;
-        _Frecuency2 = frec.y;
+        _Frequency1 = freq.x;
+        _Frequency2 = freq.y;
     }
     
     public void Update(in float[] waveData, float2 timeScale, float time)
@@ -51,7 +51,7 @@ public class NewWaveProcessor
         if(waveData is null)
             return; 
         
-        ProcessWaveData(waveData);
+        SetWaveData(waveData);
 
         DispatchNoiseShaders();
     }
@@ -60,8 +60,8 @@ public class NewWaveProcessor
     {
         noiseTexture = _NoiseTexture;
     }
-    
-    void InitCompute()
+
+    private void InitCompute()
     {
         _NoiseKernelIndex = _NoiseCompute.FindKernel(_NoiseKernelName);
         
@@ -74,25 +74,25 @@ public class NewWaveProcessor
         _NoiseCompute.SetFloat("rad", _TextureRadius);
         
     }
-    
-    void SetNoiseParameters(float frecuency1, float frecuency2, float2 offset1, float2 offset2)
+
+    private void SetNoiseParameters(float frequency1, float frequency2, float2 offset1, float2 offset2)
     {
         _NoiseCompute.SetFloat("_Time", Time.time);
 
-        _NoiseCompute.SetFloat("_Freq1", frecuency1);
-        _NoiseCompute.SetFloat("_Freq2", frecuency2);
+        _NoiseCompute.SetFloat("_Freq1", frequency1);
+        _NoiseCompute.SetFloat("_Freq2", frequency2);
 
         _NoiseCompute.SetFloats("_Offset1", new float[] { offset1.x, offset1.y });
         _NoiseCompute.SetFloats("_Offset2", new float[] { offset2.x, offset2.y });
     }
-    
-    void DispatchNoiseShaders()
+
+    private void DispatchNoiseShaders()
     {
-        SetNoiseParameters(_Frecuency1, _Frecuency2, _Offset1, _Offset2);
+        SetNoiseParameters(_Frequency1, _Frequency2, _Offset1, _Offset2);
         _NoiseCompute.Dispatch(_NoiseKernelIndex, texWidth / 8, texHeight / 8, 1);
     }
 
-    private void ProcessWaveData(in float[] waveData)
+    private void SetWaveData(in float[] waveData)
     {
         _WaveDataBuffer?.Dispose();
         _WaveDataBuffer = new ComputeBuffer(waveData.Length, sizeof(float));

@@ -4,7 +4,7 @@ using UnityEngine;
 
 using Unity.Mathematics;
 
-public class WaveProcessor
+public class OldWaveProcessor
 {
     private List<float4> _WaveData;
     private List<float4> _WaveDataBack;
@@ -33,7 +33,7 @@ public class WaveProcessor
     private float _Frecuency1, _Frecuency2;
     private float2 _Offset1, _Offset2;
 
-    public WaveProcessor(ComputeShader shader, int2 size, float2 frec)
+    public OldWaveProcessor(ComputeShader shader, int2 size, float2 frec)
     {
         _NoiseCompute = shader;
 
