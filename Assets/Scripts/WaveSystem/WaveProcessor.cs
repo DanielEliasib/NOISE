@@ -8,12 +8,21 @@ public class WaveProcessor
 {
 	private readonly LoopbackCapture _Loopback;
 
-	private float[] wave = null;
-
-	public WaveProcessor(in BandData bandData,in List<(DSPFilters, float)> filterData, int spectrumResolution, int nBuffer)
+	private float[][] waves = null;
+	private int currentWavelIndex;
+	
+	public WaveProcessor(in BandData bandData,in List<(DSPFilters, float)> filterData, int spectrumResolution, int nBuffer, int waveLenght)
 	{
 		_Loopback = new LoopbackCapture(spectrumResolution, ScalingStrategy.Sqrt, new List<BandData>(){bandData}, new List<(DSPFilters, float)>[] {filterData});
 		_Loopback.StartListening();
+
+		waves = new float[nBuffer][];
+		for (int i = 0; i < waves.Length; i++)
+		{
+			waves[i] = new float[waveLenght];
+		}
+
+		currentWavelIndex = nBuffer - 1;
 	}
 
 	public void Update()
@@ -28,14 +37,27 @@ public class WaveProcessor
 
 	private void ProcessRawWaveData(ref float[] waveData)
 	{
-		if (wave?.Length != waveData.Length)
-			wave = new float[waveData.Length];
+		var first = waves[0];
+		for (int i = 1; i < waves.Length; i++)
+		{
+			waves[i - 1] = waves[i];
+		}
 
+		waves[currentWavelIndex] = first;
+		
 		for (int i = 0; i < waveData.Length; i++)
 		{
 			//wave[i] =  waveData[i] + 0.2f;
-			wave[i] =  smoothValue(ref waveData, i, 100) + 0.2f;
-			wave[i] = (wave[i] > 0.4f ? wave[i] - 0.35f : 0.0f)*0.5f;
+			waves[currentWavelIndex][i] =  smoothValue(ref waveData, i, 4)*0.175f;
+			//waves[currentWavelIndex][i] =  waveData[i]*0.2f;
+
+			for (int j = 0; j < waves.Length-1; j++)
+			{
+				waves[currentWavelIndex][i] += waves[j][i];
+			}
+
+			waves[currentWavelIndex][i] = waves[currentWavelIndex][i] / waves.Length;
+			//wave[i] = (wave[i] > 0.4f ? wave[i] - 0.35f : 0.0f)*0.25f;
 		}
 	}
 
@@ -44,11 +66,11 @@ public class WaveProcessor
 		float val = 0;
 		int count = 0;
 		
-		for (int i = -level / 2; i < level; i++)
+		for (int i = -level / 2; i < level/2; i++)
 		{
 			int tempIndex = index - i;
 			
-			if(tempIndex < 0 || tempIndex >= waveData.Length || waveData[tempIndex] > 2.0f)
+			if(tempIndex < 0 || tempIndex >= waveData.Length)
 				continue;
 
 			val += waveData[tempIndex];
@@ -60,7 +82,7 @@ public class WaveProcessor
 	
 	public float[] GetWave()
 	{
-		return wave;
+		return waves[currentWavelIndex];
 	}
 	
 	public void Destroy()

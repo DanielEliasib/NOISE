@@ -21,7 +21,7 @@ public class LayerManager : MonoBehaviour
     [SerializeField] private int _SpectrumRes = 250;
 
     [Header("Layer parameters")]
-    [SerializeField, Range(1, 20)] private int _Levels = 5;
+    [SerializeField, Range(1, 50)] private int _Levels = 5;
 
     [Header("Color parameters")]
     [SerializeField] private ColorTemplate[] _ColorSchemes;
@@ -101,14 +101,14 @@ public class LayerManager : MonoBehaviour
             new BandData()
             {
                 _minimumFrequency = 60,
-                _maximumFrequency = 2000
+                _maximumFrequency = 1150
             },
             new List<(DSPFilters, float)>()
             {
-                //(DSPFilters.LowPass, 800),
+                (DSPFilters.LowPass, 1000),
                 //(DSPFilters.HighPass, 500)
             },
-            _SpectrumRes, 67
+            _SpectrumRes, 3, _SpectrumRes
         );
         
         _waveBaker = new WaveBaker(_NoiseCompute, new int2(texWidth, texHeight), new float2(_Frequency1, _Frequency2));

@@ -16,7 +16,7 @@ public class ScreenSizeListener
     {
         _CurrentResolution = new Vector2(Screen.width, Screen.height);
         Debug.Log("Res: " + _CurrentResolution);
-        ratio = 850.0f/ 1080.0f;
+        ratio = 1.4f*850.0f/ 1080.0f;
         separationRatio = 15f/1080.0f;
         //_WaitXSeconds = new WaitForSeconds(30);
         //_WaitEndOfFrame = new WaitForEndOfFrame();

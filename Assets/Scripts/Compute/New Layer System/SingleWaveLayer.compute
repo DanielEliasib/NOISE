@@ -29,7 +29,8 @@ void NoiseLayerGenerator (uint3 id : SV_DispatchThreadID)
                 snoise_grad((id * 3 + float3(_Offset2, 0)) / _Freq2).xyz
             );
 
-    float val = _WaveData[wRad * dataSize] + (noise / 20.0f + 0.6f) * 0.55f;
+    //float val = _WaveData[wRad * dataSize] > 0.35f? _WaveData[wRad * dataSize] : _WaveData[wRad * dataSize] + (noise / 20.0f + 0.6f) * 0.25f;
+    float val = _WaveData[wRad * dataSize]+ (noise / 20.0f + 0.6f) * 0.25f;
     
     //_NoiseData[id.xy] = float4(0, 0, 0, (noise / 20.0f + 0.6f) * 0.35f + _WaveData[wRad * dataSize]*0.4f);
     //_NoiseData[id.xy] = float4(0, 0, 0, (noise / 20.0f + 0.6f) * 0.35f + log(_WaveData[wRad * dataSize]*0.3f + 1.0f));

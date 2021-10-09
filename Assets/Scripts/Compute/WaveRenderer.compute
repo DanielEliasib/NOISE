@@ -19,14 +19,14 @@ void WaveRenderer(uint3 id : SV_DispatchThreadID)
     int index = (int)((id.x / _Width)*_LineWidth);
     float pointHeight = id.y / _Height;
     
-    if(abs(pointHeight - _Line[index] / 2.5f) < 0.015f)
+    if(abs(pointHeight - _Line[index] / 2.5f) < 0.005f)
         Result[id.xy] = float4(208.0f / 255, 47.0f / 255, 49.0f / 255, 1.0f);
     else
         Result[id.xy] = float4(208.0f / 255, 47.0f / 255, 49.0f / 255, 0.0f);
 
-    if(abs(pointHeight - _Prom / 2.5f) < 0.015f)
+    if(abs(pointHeight - _Prom / 2.5f) < 0.005f)
         Result[id.xy] = float4(38.0f/255, 184.0f/255, 114.0f/255, 1.0f);
     
-    if(abs(pointHeight - _BeatThreshold / 2.5f) < 0.015f)
+    if(abs(pointHeight - _BeatThreshold / 2.5f) < 0.005f)
         Result[id.xy] = float4(184.0f/255, 58.0f/255, 84.0f/255, 1.0f);
 }

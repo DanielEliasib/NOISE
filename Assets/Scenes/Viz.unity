@@ -506,8 +506,8 @@ MonoBehaviour:
   _TimeScale:
     x: 15
     y: 20
-  _SpectrumRes: 2000
-  _Levels: 20
+  _SpectrumRes: 100
+  _Levels: 25
   _ColorSchemes:
   - {fileID: 11400000, guid: a3478e2b872c92d4b8d453b73076e465, type: 2}
   - {fileID: 11400000, guid: 6a868e35c53e924498e862cd48c5b471, type: 2}
@@ -732,7 +732,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 37.4
+  m_fontSize: 20.8
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1

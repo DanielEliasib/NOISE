@@ -33,7 +33,7 @@ public class WaveController : MonoBehaviour
 
         _WaveDrawer = new WaveDrawer(8 * 100, 8 * 50, _WaveRenderer, _WaveTarget);
 
-        _ActiveUI = true;
+        _ActiveUI = false;
         _UI.gameObject.SetActive(_ActiveUI);
     }
 
